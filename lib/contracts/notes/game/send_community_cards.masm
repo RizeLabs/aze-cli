@@ -8,6 +8,13 @@ const.TEMP_CARD_SLOT=103
 const.PLAYER_DATA_SLOT=56
 const.PHASE_DATA_SLOT=57
 
+proc.note_state_change
+    push.254 exec.account::get_item
+    add.1
+    push.254 exec.account::set_item
+    dropw dropw
+end
+
 proc.receive_cards
     exec.account::set_item
     # => [R, V]
@@ -57,4 +64,6 @@ begin
     call.set_phase
 
     dropw dropw
+
+    call.note_state_change dropw
 end
