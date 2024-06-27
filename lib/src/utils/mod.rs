@@ -252,7 +252,7 @@ pub async fn validate_action(
 pub struct Player {
     player_id: u64,
     identifier: String,
-    game_id: Option<u64>,
+    pub game_id: Option<u64>,
 }
 
 impl Player {
