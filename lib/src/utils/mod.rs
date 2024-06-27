@@ -131,7 +131,7 @@ pub struct StatRequest {
 }
 #[derive(Serialize, Deserialize)]
 pub struct StatResponse {
-    pub community_cards: Vec<Vec<Felt>>,
+    pub community_cards: Vec<Vec<u64>>,
     pub player_balances: Vec<u64>,
     pub current_player: u64,
     pub pot_value: u64,

@@ -60,24 +60,24 @@ impl SeeHandsCmd {
                 format!(
                     "{:4} {:4} {:4} {:4} {:4}",
                     card_from_number(
-                        stat_data.community_cards[0][0].as_int(),
-                        stat_data.community_cards[0][1].as_int(),
+                        stat_data.community_cards[0][0],
+                        stat_data.community_cards[0][1],
                     ),
                     card_from_number(
-                        stat_data.community_cards[1][0].as_int(),
-                        stat_data.community_cards[1][1].as_int(),
+                        stat_data.community_cards[1][0],
+                        stat_data.community_cards[1][1],
                     ),
                     card_from_number(
-                        stat_data.community_cards[2][0].as_int(),
-                        stat_data.community_cards[2][1].as_int(),
+                        stat_data.community_cards[2][0],
+                        stat_data.community_cards[2][1],
                     ),
                     card_from_number(
-                        stat_data.community_cards[3][0].as_int(),
-                        stat_data.community_cards[3][1].as_int(),
+                        stat_data.community_cards[3][0],
+                        stat_data.community_cards[3][1],
                     ),
                     card_from_number(
-                        stat_data.community_cards[4][0].as_int(),
-                        stat_data.community_cards[4][1].as_int(),
+                        stat_data.community_cards[4][0],
+                        stat_data.community_cards[4][1],
                     )
                 )
             )),

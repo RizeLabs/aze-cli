@@ -141,21 +141,21 @@ fn get_id() -> u64 {
     game_id
 }
 
-fn get_community_cards(phase: u64, community_cards: Vec<Vec<Felt>>) -> Vec<String> {
+fn get_community_cards(phase: u64, community_cards: Vec<Vec<u64>>) -> Vec<String> {
     match phase {
         1 => {
             vec![
                 card_from_number(
-                    community_cards[0][0].as_int(),
-                    community_cards[0][1].as_int(),
+                    community_cards[0][0],
+                    community_cards[0][1],
                 ),
                 card_from_number(
-                    community_cards[1][0].as_int(),
-                    community_cards[1][1].as_int(),
+                    community_cards[1][0],
+                    community_cards[1][1],
                 ),
                 card_from_number(
-                    community_cards[2][0].as_int(),
-                    community_cards[2][1].as_int(),
+                    community_cards[2][0],
+                    community_cards[2][1],
                 ),
                 "NA".to_string(),
                 "NA".to_string(),
@@ -164,20 +164,20 @@ fn get_community_cards(phase: u64, community_cards: Vec<Vec<Felt>>) -> Vec<Strin
         2 => {
             vec![
                 card_from_number(
-                    community_cards[0][0].as_int(),
-                    community_cards[0][1].as_int(),
+                    community_cards[0][0],
+                    community_cards[0][1],
                 ),
                 card_from_number(
-                    community_cards[1][0].as_int(),
-                    community_cards[1][1].as_int(),
+                    community_cards[1][0],
+                    community_cards[1][1],
                 ),
                 card_from_number(
-                    community_cards[2][0].as_int(),
-                    community_cards[2][1].as_int(),
+                    community_cards[2][0],
+                    community_cards[2][1],
                 ),
                 card_from_number(
-                    community_cards[3][0].as_int(),
-                    community_cards[3][1].as_int(),
+                    community_cards[3][0],
+                    community_cards[3][1],
                 ),
                 "NA".to_string(),
             ]
@@ -185,48 +185,48 @@ fn get_community_cards(phase: u64, community_cards: Vec<Vec<Felt>>) -> Vec<Strin
         3 => {
             vec![
                 card_from_number(
-                    community_cards[0][0].as_int(),
-                    community_cards[0][1].as_int(),
+                    community_cards[0][0],
+                    community_cards[0][1],
                 ),
                 card_from_number(
-                    community_cards[1][0].as_int(),
-                    community_cards[1][1].as_int(),
+                    community_cards[1][0],
+                    community_cards[1][1],
                 ),
                 card_from_number(
-                    community_cards[2][0].as_int(),
-                    community_cards[2][1].as_int(),
+                    community_cards[2][0],
+                    community_cards[2][1],
                 ),
                 card_from_number(
-                    community_cards[3][0].as_int(),
-                    community_cards[3][1].as_int(),
+                    community_cards[3][0],
+                    community_cards[3][1],
                 ),
                 card_from_number(
-                    community_cards[4][0].as_int(),
-                    community_cards[4][1].as_int(),
+                    community_cards[4][0],
+                    community_cards[4][1],
                 ),
             ]
         }
         4 => {
             vec![
                 card_from_number(
-                    community_cards[0][0].as_int(),
-                    community_cards[0][1].as_int(),
+                    community_cards[0][0],
+                    community_cards[0][1],
                 ),
                 card_from_number(
-                    community_cards[1][0].as_int(),
-                    community_cards[1][1].as_int(),
+                    community_cards[1][0],
+                    community_cards[1][1],
                 ),
                 card_from_number(
-                    community_cards[2][0].as_int(),
-                    community_cards[2][1].as_int(),
+                    community_cards[2][0],
+                    community_cards[2][1],
                 ),
                 card_from_number(
-                    community_cards[3][0].as_int(),
-                    community_cards[3][1].as_int(),
+                    community_cards[3][0],
+                    community_cards[3][1],
                 ),
                 card_from_number(
-                    community_cards[4][0].as_int(),
-                    community_cards[4][1].as_int(),
+                    community_cards[4][0],
+                    community_cards[4][1],
                 ),
             ]
         }

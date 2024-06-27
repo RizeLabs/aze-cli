@@ -17,7 +17,9 @@ use warp::Filter;
 
 use crate::client::{create_aze_client, AzeClient};
 use crate::constants::{
-    COMMUNITY_CARDS, CURRENT_PHASE_SLOT, CURRENT_TURN_INDEX_SLOT, FIRST_PLAYER_INDEX, HIGHEST_BET_SLOT, IS_FOLD_OFFSET, NO_OF_PLAYERS, PLAYER_BALANCE_SLOT, PLAYER_HANDS, PLAYER_INITIAL_BALANCE
+    COMMUNITY_CARDS, CURRENT_PHASE_SLOT, CURRENT_TURN_INDEX_SLOT, FIRST_PLAYER_INDEX,
+    HIGHEST_BET_SLOT, IS_FOLD_OFFSET, NO_OF_PLAYERS, PLAYER_BALANCE_SLOT, PLAYER_HANDS,
+    PLAYER_INITIAL_BALANCE,
 };
 use crate::gamestate::{Check_Action, PokerGame};
 use crate::utils::Ws_config;
@@ -36,7 +38,7 @@ struct StatRequest {
 
 #[derive(Serialize)]
 struct StatResponse {
-    pub community_cards: Vec<Vec<Felt>>,
+    pub community_cards: Vec<Vec<u64>>,
     pub player_balances: Vec<u64>,
     pub current_player: u64,
     pub pot_value: u64,
@@ -44,7 +46,7 @@ struct StatResponse {
     pub current_state: u64,
     pub player_hand_cards: Vec<Vec<u64>>,
     pub has_folded: Vec<u64>,
-    pub highest_bet: u64
+    pub highest_bet: u64,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -269,7 +271,7 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
     let mut player_hands: Vec<u64> = vec![];
 
     //Community cards
-    let mut community_cards: Vec<Vec<Felt>> = vec![];
+    let mut community_cards: Vec<Vec<u64>> = vec![];
 
     // Player hand cards
     let mut player_hand_cards: Vec<Vec<u64>> = Vec::new();
@@ -310,7 +312,9 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
     }
 
     for i in COMMUNITY_CARDS {
-        community_cards.push(game_account.storage().get_item(i).as_elements().to_vec());
+        let elements: Vec<Felt> = game_account.storage().get_item(i).as_elements().to_vec();
+        let converted_elements: Vec<u64> = elements.iter().map(|felt| felt.as_int()).collect();
+        community_cards.push(converted_elements);
     }
 
     let current_player = game_account
@@ -338,7 +342,7 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
         current_state,
         player_hand_cards,
         has_folded,
-        highest_bet
+        highest_bet,
     }))
 }
 
