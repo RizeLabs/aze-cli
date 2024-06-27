@@ -11,10 +11,7 @@ use miden_client::client::{
     accounts::{AccountStorageMode, AccountTemplate},
     transactions::transaction_request::TransactionTemplate,
 };
-use miden_objects::{
-    accounts::AccountId,
-    notes::NoteType,
-};
+use miden_objects::{accounts::AccountId, notes::NoteType};
 
 use aze_lib::utils::{broadcast_message, read_player_data, Ws_config};
 
@@ -29,6 +26,16 @@ pub async fn raise(
     let game_account_id = AccountId::try_from(game_id).unwrap();
     let ws_url = Ws_config::load(ws_config_path).url.unwrap();
 
+    let playraise_txn_data =
+        PlayRaiseTransactionData::new(player_account_id, game_account_id, amount.unwrap());
+
+    let transaction_template = AzeTransactionTemplate::PlayRaise(playraise_txn_data);
+    let txn_request = client
+        .build_aze_play_raise_tx_request(transaction_template)
+        .unwrap();
+    execute_tx_and_sync(&mut client, txn_request.clone()).await;
+
+    // note to be consumed by game account
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
@@ -39,20 +46,6 @@ pub async fn raise(
         ),
     )
     .await;
-    
-    let playraise_txn_data = PlayRaiseTransactionData::new(
-        player_account_id,
-        game_account_id,
-        amount.unwrap(),
-    );
-
-    let transaction_template = AzeTransactionTemplate::PlayRaise(playraise_txn_data);
-    let txn_request = client
-        .build_aze_play_raise_tx_request(transaction_template)
-        .unwrap();
-    execute_tx_and_sync(&mut client, txn_request.clone()).await;
-
-    // note to be consumed by game account
 
     Ok(GameActionResponse { is_taken: true })
 }
@@ -77,17 +70,8 @@ pub async fn call(
             eprintln!("Ws_config DNE, use init or connect command before action");
         }
     }
-    let _ = broadcast_message(
-        game_account_id.to_string(),
-        ws_url.clone(),
-        format!("Player: {} plays call ", read_player_data().expect("Failed to read player data from Player.toml")),
-    )
-    .await;
 
-    let playcall_txn_data = PlayCallTransactionData::new(
-        player_account_id,
-        game_account_id,
-    );
+    let playcall_txn_data = PlayCallTransactionData::new(player_account_id, game_account_id);
 
     let transaction_template = AzeTransactionTemplate::PlayCall(playcall_txn_data);
     let txn_request = client
@@ -96,7 +80,15 @@ pub async fn call(
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
     // note to be consumed by game account
-
+    let _ = broadcast_message(
+        game_account_id.to_string(),
+        ws_url.clone(),
+        format!(
+            "Player: {} plays call ",
+            read_player_data().expect("Failed to read player data from Player.toml")
+        ),
+    )
+    .await;
     Ok(GameActionResponse { is_taken: true })
 }
 
@@ -120,17 +112,8 @@ pub async fn check(
             eprintln!("Ws_config DNE, use init or connect command before action");
         }
     }
-    let _ = broadcast_message(
-        game_account_id.to_string(),
-        ws_url.clone(),
-        format!("Player: {} plays check", read_player_data().expect("Failed to read player data from Player.toml")),
-    )
-    .await;
 
-    let playcheck_txn_data = PlayCheckTransactionData::new(
-        player_account_id,
-        game_account_id,
-    );
+    let playcheck_txn_data = PlayCheckTransactionData::new(player_account_id, game_account_id);
 
     let transaction_template = AzeTransactionTemplate::PlayCheck(playcheck_txn_data);
     let txn_request = client
@@ -139,7 +122,15 @@ pub async fn check(
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
     // note to be consumed by game account
-
+    let _ = broadcast_message(
+        game_account_id.to_string(),
+        ws_url.clone(),
+        format!(
+            "Player: {} plays check",
+            read_player_data().expect("Failed to read player data from Player.toml")
+        ),
+    )
+    .await;
     Ok(GameActionResponse { is_taken: true })
 }
 
@@ -164,17 +155,7 @@ pub async fn fold(
         }
     }
 
-    let _ = broadcast_message(
-        game_account_id.to_string(),
-        ws_url.clone(),
-        format!("Player: {} plays fold", read_player_data().expect("Failed to read player data from Player.toml")),
-    )
-    .await;
-
-    let playfold_txn_data = PlayFoldTransactionData::new(
-        player_account_id,
-        game_account_id,
-    );
+    let playfold_txn_data = PlayFoldTransactionData::new(player_account_id, game_account_id);
 
     let transaction_template = AzeTransactionTemplate::PlayFold(playfold_txn_data);
     let txn_request = client
@@ -183,7 +164,15 @@ pub async fn fold(
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
     // note to be consumed by game account
-
+    let _ = broadcast_message(
+        game_account_id.to_string(),
+        ws_url.clone(),
+        format!(
+            "Player: {} plays fold",
+            read_player_data().expect("Failed to read player data from Player.toml")
+        ),
+    )
+    .await;
     Ok(GameActionResponse { is_taken: true })
 }
 
@@ -207,18 +196,8 @@ pub async fn bet(
             eprintln!("Ws_config DNE, use init or connect command before action");
         }
     }
-    let _ = broadcast_message(
-        game_account_id.to_string(),
-        ws_url.clone(),
-        format!("Player: {} bet amount: {}", read_player_data().expect("Failed to read player data from Player.toml"), amount),
-    )
-    .await;
 
-    let playbet_txn_data = PlayBetTransactionData::new(
-        player_account_id,
-        game_account_id,
-        amount,
-    );
+    let playbet_txn_data = PlayBetTransactionData::new(player_account_id, game_account_id, amount);
 
     let transaction_template = AzeTransactionTemplate::PlayBet(playbet_txn_data);
     let txn_request = client
@@ -227,7 +206,16 @@ pub async fn bet(
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
     // note to be consumed by game account
-
+    let _ = broadcast_message(
+        game_account_id.to_string(),
+        ws_url.clone(),
+        format!(
+            "Player: {} bet amount: {}",
+            read_player_data().expect("Failed to read player data from Player.toml"),
+            amount
+        ),
+    )
+    .await;
     Ok(GameActionResponse { is_taken: true })
 }
 
