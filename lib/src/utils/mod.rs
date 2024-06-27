@@ -19,8 +19,8 @@ use crate::{
     broadcast::CheckmoveRequest,
     client::{AzeAccountTemplate, AzeClient, AzeGameMethods},
     constants::{
-        BUY_IN_AMOUNT, CURRENT_TURN_INDEX_SLOT, HIGHEST_BET, NO_OF_PLAYERS, PLAYER_INITIAL_BALANCE,
-        SMALL_BLIND_AMOUNT, SMALL_BUY_IN_AMOUNT, PLAYER_FILE_PATH
+        BUY_IN_AMOUNT, CURRENT_TURN_INDEX_SLOT, HIGHEST_BET, NO_OF_PLAYERS, PLAYER_FILE_PATH,
+        PLAYER_INITIAL_BALANCE, SMALL_BLIND_AMOUNT, SMALL_BUY_IN_AMOUNT,
     },
     gamestate::Check_Action,
     notes::{consume_notes, mint_note},
@@ -139,7 +139,7 @@ pub struct StatResponse {
     pub current_state: u64,
     pub player_hand_cards: Vec<Vec<u64>>,
     pub has_folded: Vec<u64>,
-    pub highest_bet: u64
+    pub highest_bet: u64,
 }
 
 // Config for saving broadcast url
@@ -222,6 +222,7 @@ pub async fn validate_action(
     action: Check_Action,
     url: String,
     player_id: u64,
+    game_id: u64,
 ) -> Result<bool, Box<dyn Error>> {
     let client = httpClient::new();
     let url = url::Url::parse(&url).unwrap();
@@ -229,7 +230,11 @@ pub async fn validate_action(
     let port = url.port().map(|p| format!(":{}", p)).unwrap_or_default();
     let stat_url = format!("{}{}{}", base_url, port, "/checkmove");
 
-    let request_body = CheckmoveRequest { player_id, action };
+    let request_body = CheckmoveRequest {
+        player_id,
+        game_id,
+        action,
+    };
 
     let response = client.post(&stat_url).json(&request_body).send().await?;
 
@@ -278,7 +283,6 @@ pub fn read_player_data() -> Option<String> {
     Some(player_info.identifier)
 }
 
-
 pub fn card_from_number(suit: u64, rank: u64) -> String {
     if rank == 0 || suit == 0 {
         return String::from("NA");
@@ -289,7 +293,7 @@ pub fn card_from_number(suit: u64, rank: u64) -> String {
         2 => "♦".to_string(),
         3 => "♥".to_string(),
         4 => "♠".to_string(),
-        _ => "".to_string()
+        _ => "".to_string(),
     };
 
     let rank_ = match (rank - 1) % 13 + 1 {

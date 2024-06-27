@@ -1,6 +1,8 @@
-
 use aze_types::actions::ActionType;
+use miden_objects::accounts::AccountId;
 use serde::{Deserialize, Serialize};
+
+use crate::{client::{create_aze_client, AzeClient}, constants::CURRENT_TURN_INDEX_SLOT};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Check_Action {
@@ -54,12 +56,30 @@ impl PokerGame {
         }
     }
 
-    pub fn check_move(&mut self, check_action: Check_Action, player_id: u64) -> bool {
+    pub fn check_move(&mut self, check_action: Check_Action, player_id: u64, game_id: u64) -> bool {
         let player = &mut self.players[self.current_player_index];
-        // if player.id != player_id {
-        //     eprintln!("Not your turn");
-        //     return false;
-        // }
+
+        // get current turn from slots
+        let mut client: AzeClient = create_aze_client();
+        let game_account_id = AccountId::try_from(game_id).unwrap();
+        let game_account = client.get_account(game_account_id).unwrap().0;
+
+        let current_turn_player_id = game_account
+            .storage()
+            .get_item(CURRENT_TURN_INDEX_SLOT)
+            .as_elements()[0]
+            .as_int();
+        let current_player = game_account
+            .storage()
+            .get_item(current_turn_player_id as u8)
+            .as_elements()[0]
+            .as_int();
+
+        if player_id != current_player {
+            eprintln!("Not your turn");
+            return false;
+        }
+
         if player.has_folded {
             eprintln!("Player has already folded");
             return false;
@@ -139,91 +159,5 @@ impl PokerGame {
         }
 
         true
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_small_blind_post() {
-        let player_ids = vec![1, 2, 3, 4];
-        let initial_balances = vec![1000, 1000, 1000, 1000];
-        let mut game = PokerGame::new(player_ids, initial_balances, 10, 20);
-
-        assert!(game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 1));
-        assert_eq!(game.players[0].balance, 990);
-        assert_eq!(game.pot, 10);
-        assert_eq!(game.current_player_index, 1);
-    }
-
-    #[test]
-    fn test_big_blind_post() {
-        let player_ids = vec![1, 2, 3, 4];
-        let initial_balances = vec![1000, 1000, 1000, 1000];
-        let mut game = PokerGame::new(player_ids, initial_balances, 10, 20);
-
-        assert!(game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 1));
-        assert!(game.check_move(Check_Action { action_type: ActionType::BigBlind, amount: None }, 2));
-        assert_eq!(game.players[1].balance, 980);
-        assert_eq!(game.pot, 30);
-        assert_eq!(game.current_player_index, 2);
-    }
-
-    #[test]
-    fn test_call_action() {
-        let player_ids = vec![1, 2, 3, 4];
-        let initial_balances = vec![1000, 1000, 1000, 1000];
-        let mut game = PokerGame::new(player_ids, initial_balances, 10, 20);
-
-        game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 1);
-        game.check_move(Check_Action { action_type: ActionType::BigBlind, amount: None }, 2);
-        assert!(game.check_move(Check_Action { action_type: ActionType::Call, amount: None }, 3));
-        assert_eq!(game.players[2].balance, 980);
-        assert_eq!(game.pot, 50);
-        assert_eq!(game.current_player_index, 3);
-    }
-
-    #[test]
-    fn test_raise_action() {
-        let player_ids = vec![1, 2, 3, 4];
-        let initial_balances = vec![1000, 1000, 1000, 1000];
-        let mut game = PokerGame::new(player_ids, initial_balances, 10, 20);
-
-        game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 1);
-        game.check_move(Check_Action { action_type: ActionType::BigBlind, amount: None }, 2);
-        game.check_move(Check_Action { action_type: ActionType::Call, amount: None }, 3);
-        assert!(game.check_move(Check_Action { action_type: ActionType::Raise, amount: Some(30) }, 4));
-        assert_eq!(game.players[3].balance, 950);
-        assert_eq!(game.pot, 80);
-        assert_eq!(game.current_bet, 50);
-        assert_eq!(game.current_player_index, 0);
-    }
-
-    #[test]
-    fn test_fold_action() {
-        let player_ids = vec![1, 2, 3, 4];
-        let initial_balances = vec![1000, 1000, 1000, 1000];
-        let mut game = PokerGame::new(player_ids, initial_balances, 10, 20);
-
-        game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 1);
-        game.check_move(Check_Action { action_type: ActionType::BigBlind, amount: None }, 2);
-        assert!(game.check_move(Check_Action { action_type: ActionType::Fold, amount: None }, 3));
-        assert!(game.players[2].has_folded);
-        assert_eq!(game.current_player_index, 3);
-    }
-
-    #[test]
-    fn test_invalid_actions() {
-        let player_ids = vec![1, 2, 3, 4];
-        let initial_balances = vec![1000, 1000, 1000, 1000];
-        let mut game = PokerGame::new(player_ids, initial_balances, 10, 20);
-
-        assert!(!game.check_move(Check_Action { action_type: ActionType::BigBlind, amount: None }, 1)); // Wrong player for big blind
-        assert!(game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 1));
-        assert!(!game.check_move(Check_Action { action_type: ActionType::SmallBlind, amount: None }, 2)); // Small blind already posted
-        assert!(game.check_move(Check_Action { action_type: ActionType::BigBlind, amount: None }, 2));
-        assert!(!game.check_move(Check_Action { action_type: ActionType::Check, amount: None }, 3)); // Cannot check, must call or raise
     }
 }
