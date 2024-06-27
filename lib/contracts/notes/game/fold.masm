@@ -119,10 +119,11 @@ proc.play_fold
     # => [...]
 
     # update the current turn
+    movupw.3 dropw
     exec.update_current_turn
 
     # update current phase
-    mem_load.1
+    mem_load.1 swap drop
     # => [next_turn_index]
 
     push.RAISER_INDEX exec.account::get_item
@@ -166,13 +167,13 @@ proc.play_fold
         push.CURRENT_TURN_INDEX
         exec.account::set_item
         dropw dropw
-
+        movupw.3 dropw
         if.true
             exec.update_current_turn
         end
     end
-
-    dropw
+    
+    dropw dropw
 end
 
 begin 

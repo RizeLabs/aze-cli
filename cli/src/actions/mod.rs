@@ -16,7 +16,7 @@ use miden_objects::{
     notes::NoteType,
 };
 
-use aze_lib::utils::{broadcast_message, read_player_data, Ws_config, get_stats, StatResponse};
+use aze_lib::utils::{broadcast_message, read_player_data, Ws_config};
 
 pub async fn raise(
     player_id: u64,
@@ -39,15 +39,11 @@ pub async fn raise(
         ),
     )
     .await;
-
-    // request highest bet from game account client
-    let stat_data: StatResponse = get_stats(game_account_id.to_string(), ws_url).await.unwrap();
-    let highest_bet = stat_data.highest_bet;
     
     let playraise_txn_data = PlayRaiseTransactionData::new(
         player_account_id,
         game_account_id,
-        highest_bet as u8 + amount.unwrap(),
+        amount.unwrap(),
     );
 
     let transaction_template = AzeTransactionTemplate::PlayRaise(playraise_txn_data);

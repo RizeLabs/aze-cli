@@ -16,5 +16,6 @@ Cargo.lock
 Config.toml
 ws_config.json
 Player.toml
+tests/
 
 .DS_Store
