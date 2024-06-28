@@ -107,7 +107,7 @@ impl ConsumeNotesCmd {
                     ).unwrap();
                     enc_action(action_type, account_id, target_account).await;
                 } else if action_type == 4 {
-                    let target_account = AccountId::try_from(self.game_id).unwrap();
+                    let target_account = AccountId::try_from(game_id).unwrap();
                     enc_action(action_type, account_id, target_account).await;
                 } else if
                     (5..13).contains(&action_type) ||
@@ -130,7 +130,7 @@ impl ConsumeNotesCmd {
                 {
                     self_unmask(account_id, TEMP_CARD_SLOT).await;
                     // send cards to game account
-                    let game_account_id = AccountId::try_from(self.game_id).unwrap();
+                    let game_account_id = AccountId::try_from(game_id).unwrap();
                     let mut cards: [[Felt; 4]; 3] = [[Felt::ZERO; 4]; 3];
                     for (i, slot) in (TEMP_CARD_SLOT..TEMP_CARD_SLOT + 3).enumerate() {
                         let card_digest = player_account.storage().get_item(slot);
