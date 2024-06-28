@@ -26,6 +26,7 @@ fn construct_game_constructor_storage(
     let buy_in_amt = slot_data.buy_in_amt();
     let no_of_players = slot_data.player_count();
     let flop_index = slot_data.flop_index();
+    let player_account_ids = slot_data.player_account_ids();
 
     let mut slot_index = 1u8;
 
@@ -152,12 +153,19 @@ fn construct_game_constructor_storage(
         },
     ];
 
-    slot_index += 12;
+    slot_index += 11;
 
-    for _ in 0..no_of_players {
+    for i in 0..no_of_players {
         let player_slots = vec![
             SlotItem {
-                index: slot_index, // pub key
+                index: slot_index, // account id
+                slot: StorageSlot {
+                    slot_type: StorageSlotType::Value { value_arity: 0 },
+                    value: [Felt::new(player_account_ids[i as usize]), Felt::ZERO, Felt::ZERO, Felt::ZERO],
+                },
+            },
+            SlotItem {
+                index: slot_index + 1, // pub key
                 slot: StorageSlot {
                     slot_type: StorageSlotType::Value { value_arity: 0 },
                     value: [
@@ -169,14 +177,14 @@ fn construct_game_constructor_storage(
                 },
             },
             SlotItem {
-                index: slot_index + 2, // current bet
+                index: slot_index + 3, // current bet
                 slot: StorageSlot {
                     slot_type: StorageSlotType::Value { value_arity: 0 },
                     value: [Felt::ZERO, Felt::ZERO, Felt::ZERO, Felt::ZERO],
                 },
             },
             SlotItem {
-                index: slot_index + 3, // player balance
+                index: slot_index + 4, // player balance
                 slot: StorageSlot {
                     slot_type: StorageSlotType::Value { value_arity: 0 },
                     value: [

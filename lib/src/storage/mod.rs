@@ -6,6 +6,7 @@ pub struct GameStorageSlotData {
     current_turn_index: u8,
     highest_bet: u8,
     player_balance: u8,
+    player_account_ids: Vec<u64>,
 }
 
 impl GameStorageSlotData {
@@ -16,6 +17,7 @@ impl GameStorageSlotData {
         current_turn_index: u8,
         highest_bet: u8,
         player_balance: u8,
+        player_account_ids: Vec<u64>,
     ) -> Self {
         Self {
             small_blind_amt,
@@ -24,6 +26,7 @@ impl GameStorageSlotData {
             current_turn_index,
             highest_bet,
             player_balance,
+            player_account_ids,
         }
     }
 
@@ -53,5 +56,9 @@ impl GameStorageSlotData {
 
     pub fn player_balance(&self) -> u8 {
         self.player_balance
+    }
+
+    pub fn player_account_ids(&self) -> Vec<u64> {
+        self.player_account_ids.clone()
     }
 }

@@ -51,6 +51,7 @@ pub async fn create_aze_game_account(
         FIRST_PLAYER_INDEX,
         HIGHEST_BET,
         PLAYER_INITIAL_BALANCE,
+        player_account_ids.clone(),
     );
 
     let (game_account, _) = client
