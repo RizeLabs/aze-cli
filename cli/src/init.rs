@@ -128,7 +128,7 @@ impl InitCmd {
                             // phase updated
                             if phase == pre_phase + 1 {
                                 let mut revealed_comm: Vec<Vec<Felt>> = vec![];
-                                for i in 0..3 {
+                                for i in 0..5 {
                                     revealed_comm.push(
                                         game_account
                                             .storage()
