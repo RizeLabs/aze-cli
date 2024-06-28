@@ -40,13 +40,10 @@ pub async fn raise(
     )
     .await;
 
-    // request highest bet from game account client
-    let highest_bet = 5; // for now
-
     let playraise_txn_data = PlayRaiseTransactionData::new(
         player_account_id,
         game_account_id,
-        highest_bet as u8 + amount.unwrap(),
+        amount.unwrap(),
     );
 
     let transaction_template = AzeTransactionTemplate::PlayRaise(playraise_txn_data);

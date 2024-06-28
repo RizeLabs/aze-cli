@@ -1,4 +1,3 @@
-
 use.miden::account
 use.miden::note
 use.miden::contracts::wallets::basic->wallet
@@ -92,36 +91,38 @@ end
 
 proc.play_raise
     # => [player_bet]
+    swap drop
+    mem_store.0
+    # => []
+    push.HIGHEST_BET_SLOT_INDEX exec.account::get_item drop drop drop
+    # => [highest_bet_amount]
+    mem_load.0 add
+    # => [player_bet + highest_bet_amount]
     dup mem_store.0
-    # => [player_bet]
     
     padw drop push.HIGHEST_BET_SLOT_INDEX
     exec.account::set_item
     dropw dropw
     # => []
 
-    mem_load.0
-    # => [player_bet]
-
     ## raise amount = current player bet - it should be (bet amount - last call amount) ??
     push.CURRENT_TURN_INDEX exec.account::get_item
-    # => [0, 0, 0, current turn index, player_bet]
-
+    # => [0, 0, 0, current turn index]
     drop drop drop
-    # => [current turn index, player_bet]
-
-    push.3 add
-    # => [current turn index + 3, player_bet]
-    dup mem_store.1
-    # => [current turn index + 3, player_bet]
-
-    padw drop movup.3
+    # => [current turn index]
+    push.3 add dup mem_store.2
+    # => [current turn index + 3]
+    exec.account::get_item drop drop drop
+    # => [last_bet]
+    mem_store.1 mem_load.0 
+    # => [highest_bet]
+    padw drop mem_load.2
     exec.account::set_item
     dropw dropw
     # => []
 
     ## update raiser
-    mem_load.1 push.3 sub
+    mem_load.2 push.3 sub
     # => [current turn index]
 
     padw drop push.RAISER_INDEX
@@ -145,10 +146,7 @@ proc.play_raise
     exec.account::get_item drop drop drop 
     # [player_remaining_balance, current turn index + 4]
 
-    push.HIGHEST_BET_SLOT_INDEX
-    # [HIGHEST_BET_SLOT_INDEX, player_remaining_balance, current turn index + 4]
-
-    exec.account::get_item drop drop drop 
+    mem_load.0 mem_load.1 sub
     # [player_bet, player_remaining_balance, current turn index + 4] -> ig here we need player_remaining_balance and then player_bet or we need to take it's absolute value
     
     dup.1 dup.1 gte assert

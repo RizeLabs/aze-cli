@@ -17,6 +17,7 @@ const.CURRENT_PHASE=62 # whole game is divided into 4 phases
 const.PLAYER_CHECK_COUNTER=63 
 const.FIRST_PLAYER_INDEX=64
 const.CARDS_SLOTS=52
+const.HAND_OFFSET=11
 
 # game events 
 # TODO: fix some storage for the value corresponding to these events 
@@ -289,36 +290,38 @@ export.play_raise
     # - increase the slot to next player who is playing 👀
 
     # => [player_bet]
+    swap drop
+    mem_store.0
+    # => []
+    push.HIGHEST_BET_SLOT_INDEX exec.account::get_item drop drop drop
+    # => [highest_bet_amount]
+    mem_load.0 add
+    # => [player_bet + highest_bet_amount]
     dup mem_store.0
-    # => [player_bet]
     
     padw drop push.HIGHEST_BET_SLOT_INDEX
     exec.account::set_item
     dropw dropw
     # => []
 
-    mem_load.0
-    # => [player_bet]
-
     ## raise amount = current player bet - it should be (bet amount - last call amount) ??
     push.CURRENT_TURN_INDEX exec.account::get_item
-    # => [0, 0, 0, current turn index, player_bet]
-
+    # => [0, 0, 0, current turn index]
     drop drop drop
-    # => [current turn index, player_bet]
-
-    push.3 add
-    # => [current turn index + 3, player_bet]
-    dup mem_store.1
-    # => [current turn index + 3, player_bet]
-
-    padw drop movup.3
+    # => [current turn index]
+    push.3 add dup mem_store.2
+    # => [current turn index + 3]
+    exec.account::get_item drop drop drop
+    # => [last_bet]
+    mem_store.1 mem_load.0 
+    # => [highest_bet]
+    padw drop mem_load.2
     exec.account::set_item
     dropw dropw
     # => []
 
     ## update raiser
-    mem_load.1 push.3 sub
+    mem_load.2 push.3 sub
     # => [current turn index]
 
     padw drop push.RAISER_INDEX
@@ -342,10 +345,7 @@ export.play_raise
     exec.account::get_item drop drop drop 
     # [player_remaining_balance, current turn index + 4]
 
-    push.HIGHEST_BET_SLOT_INDEX
-    # [HIGHEST_BET_SLOT_INDEX, player_remaining_balance, current turn index + 4]
-
-    exec.account::get_item drop drop drop 
+    mem_load.0 mem_load.1 sub
     # [player_bet, player_remaining_balance, current turn index + 4] -> ig here we need player_remaining_balance and then player_bet or we need to take it's absolute value
     
     dup.1 dup.1 gte assert
@@ -398,10 +398,11 @@ export.play_fold
     # => [...]
 
     # update the current turn
+    movupw.3 dropw
     exec.update_current_turn
 
     # update current phase
-    mem_load.1
+    mem_load.1 swap drop
     # => [next_turn_index]
 
     push.RAISER_INDEX exec.account::get_item
@@ -445,13 +446,13 @@ export.play_fold
         push.CURRENT_TURN_INDEX
         exec.account::set_item
         dropw dropw
-
+        movupw.3 dropw
         if.true
             exec.update_current_turn
         end
     end
-
-    dropw
+    
+    dropw dropw
 end
 
 export.play_check
@@ -705,8 +706,33 @@ export.tx_state_change
     dropw dropw
 end
 
+export.get_hand_index
+    mem_store.0
+    push.FIRST_PLAYER_INDEX swap drop
+    push.1
+    while.true
+        dup exec.account::get_item drop drop drop
+        # => [account_id, player_index_slot]
+        mem_load.0
+        # => [consumer_id, account_id, player_index_slot]
+        eq
+        
+        if.true
+            push.HAND_OFFSET add
+            push.0
+            # => [0, current_player_hand_index]
+        else
+            push.PLAYER_STATS_SLOTS add
+            push.1
+        end
+    end
+    movupw.3 dropw
+    # => [current_player_hand_index]
+end
+
 export.basic_wallet::receive_asset
 export.basic_wallet::send_asset
 export.basic::auth_tx_rpo_falcon512
 export.account::get_item
+export.account::get_id
 export.tx::create_note
