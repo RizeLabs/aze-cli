@@ -19,7 +19,6 @@ impl StatsCmd {
         let gameid: u64 = get_id();
         let mut client: AzeClient = create_aze_client();
         let game_account_id = AccountId::try_from(gameid).unwrap();
-        let game_account = client.get_account(game_account_id).unwrap().0;
         let ws_url = Ws_config::load(ws_config).url.unwrap();
         let stat_data: aze_lib::utils::StatResponse =
             get_stats(game_account_id.to_string(), ws_url).await?;
@@ -78,7 +77,7 @@ impl StatsCmd {
                 .paint("|---------------------------------------------------|"),
             Yellow
                 .bold()
-                .paint(format!("|     {:^20} {:^20}     |", "P1", "P2")),
+                .paint(format!("|     {:^20} {:^20}     |", "P3", "P4")),
             Yellow.bold().paint(format!(
                 "|     {:^20} {:^20}     |",
                 format!("Balance: {}",stat_data.player_balances[2]), format!("Balance: {}",stat_data.player_balances[3])

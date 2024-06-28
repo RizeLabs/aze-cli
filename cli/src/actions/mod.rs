@@ -34,7 +34,7 @@ pub async fn raise(
         ws_url.clone(),
         format!(
             "Player: {} plays raise by amount: {}",
-            player_id,
+            read_player_data().expect("Failed to read player data from Player.toml"),
             amount.unwrap()
         ),
     )
@@ -83,7 +83,7 @@ pub async fn call(
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
-        format!("Player: {} plays call ", player_id),
+        format!("Player: {} plays call ", read_player_data().expect("Failed to read player data from Player.toml")),
     )
     .await;
 
@@ -126,7 +126,7 @@ pub async fn check(
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
-        format!("Player: {} plays check", player_id),
+        format!("Player: {} plays check", read_player_data().expect("Failed to read player data from Player.toml")),
     )
     .await;
 
@@ -170,7 +170,7 @@ pub async fn fold(
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
-        format!("Player: {} plays fold", player_id),
+        format!("Player: {} plays fold", read_player_data().expect("Failed to read player data from Player.toml")),
     )
     .await;
 

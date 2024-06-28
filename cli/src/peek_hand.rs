@@ -1,7 +1,7 @@
 use crate::accounts::{ p2p_unmask_flow };
 use aze_lib::client::{ create_aze_client, AzeClient };
 use aze_lib::constants::{ PLAYER_CARD1_SLOT, PLAYER_CARD2_SLOT, PLAYER_FILE_PATH };
-use aze_lib::utils::Player;
+use aze_lib::utils::{ card_from_number, Player };
 use clap::Parser;
 use miden_objects::{ 
     accounts::AccountId,
@@ -27,6 +27,13 @@ impl PeekHandCmd {
             cards[i] = card.into();
         }
         p2p_unmask_flow(sender_account_id, cards).await;
+
+        let (player_account, _) = client.get_account(sender_account_id).unwrap();
+        for (i, slot) in (PLAYER_CARD1_SLOT..PLAYER_CARD2_SLOT + 1).enumerate() {
+            let card_digest: [Felt; 4] = player_account.storage().get_item(slot).into();
+            let card = card_from_number(card_digest[0].as_int());
+            println!("Card {}: {}", i + 1, card);
+        }
 
         Ok(())
     }
