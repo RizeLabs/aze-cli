@@ -12,6 +12,13 @@ const.NO_OF_CARDS=3
 const.REQUESTER_INFO_SLOT=102
 const.TEMP_CARD_SLOT=103
 
+proc.tx_state_change
+    push.254 exec.account::get_item
+    add.1
+    push.254 exec.account::set_item
+    dropw dropw
+end
+
 proc.inter_unmask
     # => [card_index, ca', cb']
     swap push.G inv
@@ -76,4 +83,6 @@ begin
     call.set_requester_data
 
     dropw dropw
+
+    call.tx_state_change dropw
 end
