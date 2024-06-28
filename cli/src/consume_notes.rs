@@ -24,22 +24,24 @@ use miden_objects::{
 };
 use tokio::time::{ sleep, Duration };
 use tokio::task::LocalSet;
-use std::fs;
 use std::path::Path;
+use dialoguer::{Input, Select};
+use std::fs::File;
+use std::io::Write;
 
 #[derive(Debug, Clone, Parser)]
 pub struct ConsumeNotesCmd {
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = 0)]
     player_id: u64,
 
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = 0)]
     game_id: u64,
 }
 
 impl ConsumeNotesCmd {
     pub async fn execute(&self) -> Result<(), String> {
         let mut client: AzeClient = create_aze_client();
-        let account_id = get_id(&self);
+        let (account_id, game_id) = get_or_prompt_ids();
         let local_set = LocalSet::new();
         local_set.run_until(async {
             loop {
@@ -151,14 +153,49 @@ impl ConsumeNotesCmd {
     }
 }
 
-fn get_id(cmd: &ConsumeNotesCmd) -> AccountId {
-    if cmd.player_id == 0 {
-        let path = Path::new(PLAYER_FILE_PATH);
-        let player: Player = toml
-            ::from_str(&fs::read_to_string(path).expect("Failed to read Player.toml"))
-            .expect("Failed to deserialize player data");
-        return AccountId::try_from(player.player_id()).unwrap();
+fn get_or_prompt_ids() -> (AccountId, AccountId) {
+    let path = Path::new(PLAYER_FILE_PATH);
+    let mut player_id: u64 = 0;
+    let mut identifier: String = "".to_string();
+    if path.exists() {
+        let player: Player = toml::from_str(
+            &std::fs::read_to_string(path).expect("Failed to read Player.toml file"),
+        )
+        .expect("Failed to parse Player.toml file");
+
+        if let Some(game_id) = player.game_id() {
+            let player_id = AccountId::try_from(player.player_id()).unwrap();
+            let game_id = AccountId::try_from(game_id).unwrap();
+            return (player_id, game_id);
+        }
+        else {
+            player_id = player.player_id();
+            identifier = player.identifier();
+        }
+    }
+    else {
+        player_id = Input::<String>::new()
+            .with_prompt("What is your player id?")
+            .interact()
+            .expect("Failed to get player id")
+            .parse()
+            .expect("Invalid player id");
     }
 
-    AccountId::try_from(cmd.player_id).unwrap()
+    let game_id: u64 = Input::<String>::new()
+        .with_prompt("What is the game id?")
+        .interact()
+        .expect("Failed to get game id")
+        .parse()
+        .expect("Invalid game id");
+
+    let player = Player::new(player_id, identifier, Some(game_id));
+    let toml_string = toml::to_string(&player).expect("Failed to serialize player data");
+    let mut file = File::create(&path).expect("Failed to create Player.toml file");
+    file.write_all(toml_string.as_bytes())
+        .expect("Failed to write player data to Player.toml file");
+
+    let player_id = AccountId::try_from(player_id).unwrap();
+    let game_id = AccountId::try_from(game_id).unwrap();
+    (player_id, game_id)
 }
