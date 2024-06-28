@@ -20,11 +20,8 @@ use crate::{
     client::{AzeAccountTemplate, AzeClient, AzeGameMethods},
     constants::{
         BUY_IN_AMOUNT, CURRENT_TURN_INDEX_SLOT, HIGHEST_BET, NO_OF_PLAYERS, PLAYER_INITIAL_BALANCE,
-        SMALL_BLIND_AMOUNT, SMALL_BUY_IN_AMOUNT,
-    },
-    gamestate::Check_Action,
-    notes::{consume_notes, mint_note},
-    storage::GameStorageSlotData,
+        SMALL_BLIND_AMOUNT, SMALL_BUY_IN_AMOUNT, PLAYER_FILE_PATH
+    }, gamestate::Check_Action, notes::{consume_notes, mint_note}, storage::GameStorageSlotData
 };
 use ::rand::Rng;
 use figment::{
@@ -118,72 +115,6 @@ pub async fn log_slots(client: &AzeClient, account_id: AccountId) {
             regular_account.storage().get_item(i)
         );
     }
-}
-
-pub async fn setup_accounts(
-    mut client: &mut AzeClient,
-) -> (FungibleAsset, AccountId, AccountId, GameStorageSlotData) {
-    let slot_data = GameStorageSlotData::new(
-        SMALL_BLIND_AMOUNT,
-        SMALL_BUY_IN_AMOUNT,
-        NO_OF_PLAYERS,
-        CURRENT_TURN_INDEX_SLOT,
-        HIGHEST_BET,
-        PLAYER_INITIAL_BALANCE,
-    );
-
-    let (game_account, _) = client
-        .new_game_account(
-            AzeAccountTemplate::GameAccount {
-                mutable_code: false,
-                storage_mode: AccountStorageMode::Local, // for now
-            },
-            Some(slot_data.clone()),
-        )
-        .unwrap();
-    let game_account_id = game_account.id();
-    log_slots(&client, game_account_id).await;
-
-    let (player_account, _) = client
-        .new_game_account(
-            AzeAccountTemplate::PlayerAccount {
-                mutable_code: false,
-                storage_mode: AccountStorageMode::Local, // for now
-            },
-            None,
-        )
-        .unwrap();
-    let player_account_id = player_account.id();
-
-    let (faucet_account, _) = client
-        .new_account(AccountTemplate::FungibleFaucet {
-            token_symbol: TokenSymbol::new("MATIC").unwrap(),
-            decimals: 8,
-            max_supply: 1_000_000_000,
-            storage_mode: AccountStorageMode::Local,
-        })
-        .unwrap();
-    let faucet_account_id = faucet_account.id();
-
-    let note = mint_note(
-        &mut client,
-        player_account_id,
-        faucet_account_id,
-        NoteType::Public,
-    )
-    .await;
-    consume_notes(&mut client, player_account_id, &[note]).await;
-
-    let fungible_asset = FungibleAsset::new(faucet_account_id, BUY_IN_AMOUNT).unwrap();
-    let sender_account_id = player_account_id;
-    let target_account_id = game_account_id;
-
-    return (
-        fungible_asset,
-        sender_account_id,
-        target_account_id,
-        slot_data,
-    );
 }
 
 #[derive(Serialize)]
@@ -307,15 +238,35 @@ pub async fn validate_action(
     }
 }
 
-#[derive(Deserialize)]
-struct Player {
+#[derive(Serialize, Deserialize)]
+pub struct Player {
     player_id: u64,
     identifier: String,
+    game_id: Option<u64>,
+}
+
+impl Player {
+    pub fn new(player_id: u64, identifier: String, game_id: Option<u64>) -> Self {
+        Player {
+            player_id,
+            identifier,
+            game_id,
+        }
+    }
+    pub fn player_id(&self) -> u64 {
+        self.player_id
+    }
+    pub fn identifier(&self) -> String {
+        self.identifier.clone()
+    }
+    pub fn game_id(&self) -> Option<u64> {
+        self.game_id
+    }
 }
 
 // get player identifier
 pub fn read_player_data() -> Option<String> {
-    let mut file = File::open(Path::new("Player.toml")).ok()?;
+    let mut file = File::open(Path::new(PLAYER_FILE_PATH)).ok()?;
     let mut content = String::new();
     file.read_to_string(&mut content).ok()?;
     let player_info: Player = Toml::from_str(&content).ok()?;

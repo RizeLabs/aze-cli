@@ -3,23 +3,20 @@ use std::path::PathBuf;
 use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use aze_lib::{
     client::{create_aze_client, AzeClient},
-    utils::{card_from_number, get_stats, Ws_config},
+    constants::PLAYER_FILE_PATH,
+    utils::{card_from_number, get_stats, Ws_config, Player},
 };
 use clap::Parser;
 use dialoguer::Input;
 use miden_objects::accounts::AccountId;
+use std::path::Path;
 
 #[derive(Parser, Debug, Clone)]
 pub struct StatsCmd;
 
 impl StatsCmd {
     pub async fn execute(&self, ws_config: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-        let gameid: u64 = Input::<String>::new()
-            .with_prompt("What is the game id?")
-            .interact()
-            .expect("Failed to get game id")
-            .parse()
-            .expect("Invalid game id");
+        let gameid: u64 = get_id();
         let mut client: AzeClient = create_aze_client();
         let game_account_id = AccountId::try_from(gameid).unwrap();
         let game_account = client.get_account(game_account_id).unwrap().0;
@@ -98,4 +95,12 @@ impl StatsCmd {
         println!("{}", poker_table);
         Ok(())
     }
+}
+
+fn get_id() -> u64 {
+    let path = Path::new(PLAYER_FILE_PATH);
+    let player: Player = toml::from_str(&std::fs::read_to_string(path).expect("Failed to read Player.toml")).expect("Failed to deserialize player data");
+    let game_id = player.game_id().unwrap();
+
+    game_id
 }
