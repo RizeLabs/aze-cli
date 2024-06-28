@@ -134,7 +134,8 @@ pub struct StatResponse {
     pub pot_value: u64,
     pub player_hands: Vec<u64>,
     pub current_state: u64,
-    pub player_hand_cards: Vec<Vec<u64>>
+    pub player_hand_cards: Vec<Vec<u64>>,
+    pub has_folded: Vec<u64>
 }
 
 // Config for saving broadcast url
