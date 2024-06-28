@@ -25,6 +25,7 @@ use crate::constants::{
     PLAYER_INITIAL_BALANCE,
     FIRST_PLAYER_INDEX,
     IS_FOLD_OFFSET,
+    HIGHEST_BET_SLOT
 };
 use crate::gamestate::{ Check_Action, PokerGame };
 use crate::utils::Ws_config;
@@ -51,6 +52,7 @@ struct StatResponse {
     pub current_state: u64,
     pub player_hand_cards: Vec<Vec<u64>>,
     pub has_folded: Vec<u64>,
+    pub highest_bet: u64
 }
 
 #[derive(Deserialize, Serialize)]
@@ -328,6 +330,11 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
         .get_item(CURRENT_PHASE_SLOT)
         .as_elements()[0]
         .as_int();
+    let highest_bet = game_account
+    .storage()
+    .get_item(HIGHEST_BET_SLOT)
+    .as_elements()[0]
+    .as_int();
 
     Ok(
         warp::reply::json(
@@ -340,6 +347,7 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
                 current_state,
                 player_hand_cards,
                 has_folded,
+                highest_bet
             })
         )
     )
