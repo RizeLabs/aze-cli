@@ -219,6 +219,7 @@ pub async fn validate_action(
     action: Check_Action,
     url: String,
     player_id: u64,
+    game_id: u64,
 ) -> Result<bool, Box<dyn Error>> {
     let client = httpClient::new();
     let url = url::Url::parse(&url).unwrap();
@@ -226,7 +227,11 @@ pub async fn validate_action(
     let port = url.port().map(|p| format!(":{}", p)).unwrap_or_default();
     let stat_url = format!("{}{}{}", base_url, port, "/checkmove");
 
-    let request_body = CheckmoveRequest { player_id, action };
+    let request_body = CheckmoveRequest {
+        player_id,
+        game_id,
+        action,
+    };
 
     let response = client.post(&stat_url).json(&request_body).send().await?;
 
@@ -263,6 +268,9 @@ impl Player {
     }
     pub fn game_id(&self) -> Option<u64> {
         self.game_id
+    }
+    pub fn set_game_id(&mut self, game_id: u64) {
+        self.game_id = Some(game_id);
     }
 }
 

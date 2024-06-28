@@ -79,6 +79,7 @@ async fn send_action(
         },
         ws_url,
         player_id,
+        game_id.clone(),
     )
     .await.unwrap();
     if result == false {

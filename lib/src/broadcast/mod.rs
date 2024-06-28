@@ -58,6 +58,7 @@ struct StatResponse {
 #[derive(Deserialize, Serialize)]
 pub struct CheckmoveRequest {
     pub player_id: u64,
+    pub game_id: u64,
     pub action: Check_Action,
 }
 
@@ -358,6 +359,6 @@ pub async fn checkmove_handler(
     local_game: Arc<Mutex<PokerGame>>
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let mut game = local_game.lock().unwrap();
-    let result = game.check_move(body.action, body.player_id);
+    let result = game.check_move(body.action, body.player_id, body.game_id);
     Ok(warp::reply::json(&[result]))
 }
