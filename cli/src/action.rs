@@ -1,31 +1,23 @@
 use crate::actions;
 use aze_lib::gamestate::Check_Action;
-use aze_lib::utils::Ws_config;
+use aze_lib::utils::{ Ws_config, Player };
 use aze_lib::{
-    constants::{BUY_IN_AMOUNT, NO_OF_PLAYERS, SMALL_BLIND_AMOUNT},
+    constants::{BUY_IN_AMOUNT, NO_OF_PLAYERS, SMALL_BLIND_AMOUNT, PLAYER_FILE_PATH},
     utils::validate_action,
 };
 use aze_types::actions::{ActionType, GameActionResponse};
 use clap::{Parser, ValueEnum};
 use dialoguer::{Input, Select};
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
+
 #[derive(Debug, Clone, Parser)]
 pub struct ActionCmd {}
 
 impl ActionCmd {
     pub async fn execute(&self, ws_config_path: &std::path::PathBuf) -> Result<(), String> {
-        let playerid: u64 = Input::<String>::new()
-            .with_prompt("What is your player id?")
-            .interact()
-            .expect("Failed to get player id")
-            .parse()
-            .expect("Invalid player id");
-
-        let gameid: u64 = Input::<String>::new()
-            .with_prompt("What is the game id?")
-            .interact()
-            .expect("Failed to get game id")
-            .parse()
-            .expect("Invalid game id");
+        let (playerid, gameid) = get_or_prompt_ids();
 
         let action_type = Select::new()
             .with_prompt("What is your action type?")
@@ -87,6 +79,7 @@ async fn send_action(
         },
         ws_url,
         player_id,
+        game_id.clone(),
     )
     .await.unwrap();
     if result == false {
@@ -100,4 +93,47 @@ async fn send_action(
         ActionType::Check => actions::check(player_id, game_id, ws_config_path).await,
         ActionType::Fold => actions::fold(player_id, game_id, ws_config_path).await,
     }
+}
+
+fn get_or_prompt_ids() -> (u64, u64) {
+    let path = Path::new(PLAYER_FILE_PATH);
+    let mut player_id: u64 = 0;
+    let mut identifier: String = "".to_string();
+    if path.exists() {
+        let player: Player = toml::from_str(
+            &std::fs::read_to_string(path).expect("Failed to read Player.toml file"),
+        )
+        .expect("Failed to parse Player.toml file");
+
+        if let Some(game_id) = player.game_id() {
+            return (player.player_id(), game_id);
+        }
+        else {
+            player_id = player.player_id();
+            identifier = player.identifier();
+        }
+    }
+    else {
+        player_id = Input::<String>::new()
+            .with_prompt("What is your player id?")
+            .interact()
+            .expect("Failed to get player id")
+            .parse()
+            .expect("Invalid player id");
+    }
+
+    let game_id: u64 = Input::<String>::new()
+        .with_prompt("What is the game id?")
+        .interact()
+        .expect("Failed to get game id")
+        .parse()
+        .expect("Invalid game id");
+
+    let player = Player::new(player_id, identifier, Some(game_id));
+    let toml_string = toml::to_string(&player).expect("Failed to serialize player data");
+    let mut file = File::create(&path).expect("Failed to create Player.toml file");
+    file.write_all(toml_string.as_bytes())
+        .expect("Failed to write player data to Player.toml file");
+
+    (player_id, game_id)
 }

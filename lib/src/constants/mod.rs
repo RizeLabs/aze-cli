@@ -35,6 +35,7 @@ pub const COMMUNITY_CARDS: [u8;5] = [116, 117, 118, 119, 120];
 pub const FLOP_SLOT: u8 = 116;
 
 // PLAYER ACCOUNT
+pub const PLAYER_FILE_PATH: &str = "Player.toml";
 pub const SECRET_KEY_SLOT: u8 = 53;
 pub const DEFAULT_SKEY: u8 = 8;
 pub const MASKING_FACTOR_SLOT: u8 = 55;

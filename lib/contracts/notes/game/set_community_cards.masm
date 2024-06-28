@@ -5,6 +5,13 @@ use.miden::contracts::wallets::basic->wallet
 
 const.NO_OF_CARDS=3
 
+proc.tx_state_change
+    push.254 exec.account::get_item
+    add.1
+    push.254 exec.account::set_item
+    dropw dropw
+end
+
 proc.set_cards
     # => [card_index, Cb, Ca]
     push.0 dup movup.2
@@ -46,6 +53,8 @@ begin
         loc_load.0 push.1 add
         loc_store.0
     end
+
+    call.tx_state_change dropw
 
     dropw
 end

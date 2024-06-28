@@ -7,7 +7,16 @@ use crate::accounts::{
     send_unmasked_cards,
 };
 use aze_lib::client::{ create_aze_client, AzeClient };
-use aze_lib::constants::{ PLAYER_DATA_SLOT, PLAYER_CARD1_SLOT, TEMP_CARD_SLOT, REQUESTER_SLOT, PHASE_DATA_SLOT, FLOP_SLOT };
+use aze_lib::constants::{
+    PLAYER_DATA_SLOT,
+    PLAYER_CARD1_SLOT,
+    TEMP_CARD_SLOT,
+    REQUESTER_SLOT,
+    PHASE_DATA_SLOT,
+    FLOP_SLOT,
+    PLAYER_FILE_PATH
+};
+use aze_lib::utils::Player;
 use clap::Parser;
 use miden_objects::{
     accounts::AccountId,
@@ -15,6 +24,8 @@ use miden_objects::{
 };
 use tokio::time::{ sleep, Duration };
 use tokio::task::LocalSet;
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Clone, Parser)]
 pub struct ConsumeNotesCmd {
@@ -28,7 +39,7 @@ pub struct ConsumeNotesCmd {
 impl ConsumeNotesCmd {
     pub async fn execute(&self) -> Result<(), String> {
         let mut client: AzeClient = create_aze_client();
-        let account_id = AccountId::try_from(self.player_id).unwrap();
+        let account_id = get_id(&self);
         let local_set = LocalSet::new();
         local_set.run_until(async {
             loop {
@@ -138,4 +149,16 @@ impl ConsumeNotesCmd {
         }).await;
         Ok(())
     }
+}
+
+fn get_id(cmd: &ConsumeNotesCmd) -> AccountId {
+    if cmd.player_id == 0 {
+        let path = Path::new(PLAYER_FILE_PATH);
+        let player: Player = toml
+            ::from_str(&fs::read_to_string(path).expect("Failed to read Player.toml"))
+            .expect("Failed to deserialize player data");
+        return AccountId::try_from(player.player_id()).unwrap();
+    }
+
+    AccountId::try_from(cmd.player_id).unwrap()
 }

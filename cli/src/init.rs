@@ -2,23 +2,21 @@ use crate::accounts::{ create_aze_game_account, consume_game_notes, send_communi
 use aze_lib::client::{ create_aze_client, AzeClient };
 use aze_lib::broadcast::initialise_server;
 use aze_lib::constants::{
-    BUY_IN_AMOUNT, COMMUNITY_CARDS, CURRENT_PHASE_SLOT, NO_OF_PLAYERS, SMALL_BLIND_AMOUNT,
+    BUY_IN_AMOUNT,
+    COMMUNITY_CARDS,
+    CURRENT_PHASE_SLOT,
+    NO_OF_PLAYERS,
+    SMALL_BLIND_AMOUNT,
 };
-use aze_lib::utils::{broadcast_message, card_from_number, Ws_config};
+use aze_lib::utils::{ broadcast_message, card_from_number, Ws_config };
 use aze_types::accounts::AccountCreationError;
-use clap::{Parser, ValueEnum};
-use figment::{
-    providers::{Format, Toml},
-    Figment,
-};
-use miden_objects::{
-    accounts::AccountId,
-    Felt, FieldElement
-};
+use clap::{ Parser, ValueEnum };
+use figment::{ providers::{ Format, Toml }, Figment };
+use miden_objects::{ accounts::AccountId, Felt, FieldElement };
 use serde::Deserialize;
 use std::path::PathBuf;
 use tokio::task::LocalSet;
-use tokio::time::{sleep, Duration};
+use tokio::time::{ sleep, Duration };
 
 #[derive(ValueEnum, Debug, Clone)]
 enum GameType {
@@ -74,7 +72,15 @@ impl InitCmd {
                 let config_clone = ws_config.clone();
                 let player_ids_clone = player_ids.clone();
                 tokio::spawn(async move {
-                    match initialise_server(game_account_id.to_string(), &config_clone, buy_in_amount.clone(), small_blind_amount.clone(), player_ids_clone) {
+                    match
+                        initialise_server(
+                            game_account_id.to_string(),
+                            &config_clone,
+                            buy_in_amount.clone(),
+                            small_blind_amount.clone(),
+                            player_ids_clone
+                        )
+                    {
                         Some(ws_url) => {
                             println!("Game server started at: {}", ws_url);
                             Ok(())
@@ -97,121 +103,115 @@ impl InitCmd {
                         eprintln!("Ws_config DNE, use init or connect command before action");
                     }
                 }
-                local_set
-                    .run_until(async {
-                        loop {
-                            let (game_account, _) = client.get_account(game_account_id).unwrap();
-                            let phase_data = game_account
-                                .storage()
-                                .get_item(CURRENT_PHASE_SLOT)
-                                .as_elements()
-                                .to_vec();
-                            let pre_phase = phase_data[0].as_int();
-                            consume_game_notes(game_account_id).await;
-                            let (game_account, _) = client.get_account(game_account_id).unwrap();
-                            let phase_data = game_account
-                                .storage()
-                                .get_item(CURRENT_PHASE_SLOT)
-                                .as_elements()
-                                .to_vec();
-                            let phase = phase_data[0].as_int();
+                local_set.run_until(async {
+                    loop {
+                        let (game_account, _) = client.get_account(game_account_id).unwrap();
+                        let phase_data = game_account
+                            .storage()
+                            .get_item(CURRENT_PHASE_SLOT)
+                            .as_elements()
+                            .to_vec();
+                        let pre_phase = phase_data[0].as_int();
+                        consume_game_notes(game_account_id).await;
+                        let (game_account, _) = client.get_account(game_account_id).unwrap();
+                        let phase_data = game_account
+                            .storage()
+                            .get_item(CURRENT_PHASE_SLOT)
+                            .as_elements()
+                            .to_vec();
+                        let phase = phase_data[0].as_int();
 
-                            // if phase is not incremented post consumption, continue
-                            if pre_phase + 1 != phase {
-                                sleep(Duration::from_secs(5)).await;
-                                match pre_phase {
-                                    0 => {
-                                        let mut revealed_comm: Vec<u64> = vec![];
-                                        for i in 0..3 {
-                                            revealed_comm.push(
-                                                game_account
-                                                    .storage()
-                                                    .get_item(COMMUNITY_CARDS[i])
-                                                    .as_elements()[0]
-                                                    .as_int(),
-                                            );
-                                        }
-                                        let _ = broadcast_message(
-                                            game_account_id.clone().to_string(),
-                                            ws_url.clone(),
-                                            format!(
-                                                "Community Cards Revealed: {} {} {}",
-                                                card_from_number(revealed_comm[0]),
-                                                card_from_number(revealed_comm[1]),
-                                                card_from_number(revealed_comm[2])
-                                            ),
-                                        )
-                                        .await;
-                                    }
-
-                                    1 => {
-                                        let _ = broadcast_message(
-                                            game_account_id.clone().to_string(),
-                                            ws_url.clone(),
-                                            format!(
-                                                "Community Card Revealed: {}",
-                                                card_from_number(
-                                                    game_account
-                                                        .storage()
-                                                        .get_item(COMMUNITY_CARDS[3])
-                                                        .as_elements()[0]
-                                                        .as_int()
-                                                ),
-                                            ),
-                                        )
-                                        .await;
-                                    }
-                                    2 => {
-                                        let _ = broadcast_message(
-                                            game_account_id.clone().to_string(),
-                                            ws_url.clone(),
-                                            format!(
-                                                "Community Card Revealed: {}",
-                                                card_from_number(
-                                                    game_account
-                                                        .storage()
-                                                        .get_item(COMMUNITY_CARDS[4])
-                                                        .as_elements()[0]
-                                                        .as_int()
-                                                ),
-                                            ),
-                                        )
-                                        .await;
-                                    }
-                                    _ => (),
-                                }
-                                continue;
-                            }
-
-                            // broadcast message if game ends
-                            if phase == 3 {
-                                let _ = broadcast_message(
-                                    game_account_id.to_string(),
-                                    ws_url.clone(),
-                                    format!("Game Ended"),
-                                )
-                                .await;
-                            }
-
-                            // if phase changes, send community cards for unmasking
-                            let player_account_id = AccountId::try_from(player_ids[0]).unwrap();
-                            let mut cards: [[Felt; 4]; 3] = [[Felt::ZERO; 4]; 3];
-                            for (i, slot) in (1..4).enumerate() {
-                                let card_digest = game_account.storage().get_item(slot);
-                                cards[i] = card_digest.into();
-                            }
-                            // send community cards
-                            send_community_cards(
-                                game_account_id,
-                                player_account_id,
-                                cards,
-                                phase as u8,
-                            )
-                            .await;
-                            sleep(Duration::from_secs(5)).await;
+                        // if phase is not incremented post consumption, continue
+                        if pre_phase + 1 != phase {
+                            sleep(Duration::from_secs(2)).await;
+                            continue;
                         }
-                    })
-                    .await;
+
+                        match pre_phase {
+                            0 => {
+                                let mut revealed_comm: Vec<u64> = vec![];
+                                for i in 0..3 {
+                                    revealed_comm.push(
+                                        game_account
+                                            .storage()
+                                            .get_item(COMMUNITY_CARDS[i])
+                                            .as_elements()[0]
+                                            .as_int()
+                                    );
+                                }
+                                let _ = broadcast_message(
+                                    game_account_id.clone().to_string(),
+                                    ws_url.clone(),
+                                    format!(
+                                        "Community Cards Revealed: {} {} {}",
+                                        card_from_number(revealed_comm[0]),
+                                        card_from_number(revealed_comm[1]),
+                                        card_from_number(revealed_comm[2])
+                                    )
+                                ).await;
+                            }
+
+                            1 => {
+                                let _ = broadcast_message(
+                                    game_account_id.clone().to_string(),
+                                    ws_url.clone(),
+                                    format!(
+                                        "Community Card Revealed: {}",
+                                        card_from_number(
+                                            game_account
+                                                .storage()
+                                                .get_item(COMMUNITY_CARDS[3])
+                                                .as_elements()[0]
+                                                .as_int()
+                                        )
+                                    )
+                                ).await;
+                            }
+                            2 => {
+                                let _ = broadcast_message(
+                                    game_account_id.clone().to_string(),
+                                    ws_url.clone(),
+                                    format!(
+                                        "Community Card Revealed: {}",
+                                        card_from_number(
+                                            game_account
+                                                .storage()
+                                                .get_item(COMMUNITY_CARDS[4])
+                                                .as_elements()[0]
+                                                .as_int()
+                                        )
+                                    )
+                                ).await;
+                            }
+                            _ => (),
+                        }
+
+                        // broadcast message if game ends
+                        if phase == 3 {
+                            let _ = broadcast_message(
+                                game_account_id.to_string(),
+                                ws_url.clone(),
+                                format!("Game Ended")
+                            ).await;
+                        }
+
+                        // if phase changes, send community cards for unmasking
+                        let player_account_id = AccountId::try_from(player_ids[0]).unwrap();
+                        let mut cards: [[Felt; 4]; 3] = [[Felt::ZERO; 4]; 3];
+                        for (i, slot) in (1..4).enumerate() {
+                            let card_digest = game_account.storage().get_item(slot);
+                            cards[i] = card_digest.into();
+                        }
+                        // send community cards
+                        send_community_cards(
+                            game_account_id,
+                            player_account_id,
+                            cards,
+                            phase as u8
+                        ).await;
+                        sleep(Duration::from_secs(2)).await;
+                    }
+                }).await;
                 Ok(())
             }
             Err(e) => Err(format!("Error creating game account: {}", e)),
@@ -229,10 +229,5 @@ struct Config {
 fn load_config(config_file: &PathBuf) -> Result<Config, String> {
     Figment::from(Toml::file(config_file))
         .extract()
-        .map_err(|err| {
-            format!(
-                "Failed to load {} config file: {err}",
-                config_file.display()
-            )
-        })
+        .map_err(|err| { format!("Failed to load {} config file: {err}", config_file.display()) })
 }

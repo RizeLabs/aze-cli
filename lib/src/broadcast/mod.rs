@@ -1,25 +1,33 @@
 use aze_types::actions::ActionType;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{ SinkExt, StreamExt };
 use get_if_addrs::get_if_addrs;
-use log::{error, info};
+use log::{ error, info };
 use miden_objects::accounts::AccountId;
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use tokio::sync::{broadcast, RwLock};
+use std::sync::{ Arc, Mutex };
+use tokio::sync::{ broadcast, RwLock };
 use tokio_tungstenite::tungstenite::protocol::Message as TungsteniteMessage;
 use warp::hyper::StatusCode;
 use warp::ws::Ws;
 use warp::Filter;
 
-use crate::client::{create_aze_client, AzeClient};
+use crate::client::{ create_aze_client, AzeClient };
 use crate::constants::{
-    COMMUNITY_CARDS, CURRENT_PHASE_SLOT, CURRENT_TURN_INDEX_SLOT, NO_OF_PLAYERS,
-    PLAYER_BALANCE_SLOT, PLAYER_HANDS, POT_VALUE,
+    COMMUNITY_CARDS,
+    CURRENT_PHASE_SLOT,
+    CURRENT_TURN_INDEX_SLOT,
+    NO_OF_PLAYERS,
+    PLAYER_BALANCE_SLOT,
+    PLAYER_HANDS,
+    PLAYER_INITIAL_BALANCE,
+    FIRST_PLAYER_INDEX,
+    IS_FOLD_OFFSET,
+    HIGHEST_BET_SLOT
 };
-use crate::gamestate::{Check_Action, PokerGame};
+use crate::gamestate::{ Check_Action, PokerGame };
 use crate::utils::Ws_config;
 type Peers = Arc<RwLock<HashMap<String, broadcast::Sender<TungsteniteMessage>>>>;
 
@@ -31,7 +39,7 @@ struct PublishRequest {
 
 #[derive(Deserialize)]
 struct StatRequest {
-    game_id: String
+    game_id: String,
 }
 
 #[derive(Serialize)]
@@ -42,12 +50,15 @@ struct StatResponse {
     pub pot_value: u64,
     pub player_hands: Vec<u64>,
     pub current_state: u64,
-    pub player_hand_cards: Vec<Vec<u64>>
+    pub player_hand_cards: Vec<Vec<u64>>,
+    pub has_folded: Vec<u64>,
+    pub highest_bet: u64
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct CheckmoveRequest {
     pub player_id: u64,
+    pub game_id: u64,
     pub action: Check_Action,
 }
 
@@ -56,38 +67,39 @@ pub fn initialise_server(
     ws_config_path: &PathBuf,
     buy_in_amount: u64,
     small_blind_amount: u8,
-    player_ids: Vec<u64>,
+    player_ids: Vec<u64>
 ) -> Option<String> {
     let ip: [u8; 4] = get_ipv4_bytes().unwrap();
     let port = 12044;
-    let ws_url = format!(
-        "ws://{}.{}.{}.{}:{}/ws/{}",
-        ip[0], ip[1], ip[2], ip[3], port, game_id
-    );
+    let ws_url = format!("ws://{}.{}.{}.{}:{}/ws/{}", ip[0], ip[1], ip[2], ip[3], port, game_id);
 
     // Spawn the server task in the background
     tokio::spawn(async move {
         let peers: Peers = Arc::new(RwLock::new(HashMap::new()));
         let peers_filter = warp::any().map(move || peers.clone());
 
-        let ws_route = warp::path("ws")
+        let ws_route = warp
+            ::path("ws")
             .and(warp::path::param())
             .and(warp::ws())
             .and(peers_filter.clone())
             .and_then(ws_handler);
 
-        let publish_route = warp::path("publish")
+        let publish_route = warp
+            ::path("publish")
             .and(warp::post())
             .and(warp::body::json())
             .and(peers_filter.clone())
             .and_then(publish_handler);
 
-        let stats_route = warp::path("stats")
+        let stats_route = warp
+            ::path("stats")
             .and(warp::post())
             .and(warp::body::json())
             .and_then(stat_handler);
 
-        let checkmove_route = warp::path("checkmove")
+        let checkmove_route = warp
+            ::path("checkmove")
             .and(warp::post())
             .and(warp::body::json())
             .and(with_game())
@@ -99,10 +111,7 @@ pub fn initialise_server(
             .or(checkmove_route)
             .with(warp::log("broadcast_server"));
 
-        info!(
-            "Starting WebSocket server at {}.{}.{}.{}:{}",
-            ip[0], ip[1], ip[2], ip[3], port
-        );
+        info!("Starting WebSocket server at {}.{}.{}.{}:{}", ip[0], ip[1], ip[2], ip[3], port);
         let ip_addr: IpAddr = ip.into();
         warp::serve(routes).run((ip_addr, port)).await;
     });
@@ -113,12 +122,16 @@ pub fn initialise_server(
     ws_config.save(ws_config_path);
 
     // initialise local game state
-    let game = Arc::new(Mutex::new(PokerGame::new(
-        player_ids,
-        vec![buy_in_amount; 4],
-        small_blind_amount as u64,
-        (small_blind_amount * 2) as u64,
-    )));
+    let game = Arc::new(
+        Mutex::new(
+            PokerGame::new(
+                player_ids,
+                vec![buy_in_amount; 4],
+                small_blind_amount as u64,
+                (small_blind_amount * 2) as u64
+            )
+        )
+    );
 
     set_game(game.clone());
     Some(ws_url)
@@ -169,8 +182,11 @@ pub fn set_game(game: Arc<Mutex<PokerGame>>) {
     }
 }
 
-fn with_game(
-) -> impl Filter<Extract = (Arc<Mutex<PokerGame>>,), Error = std::convert::Infallible> + Clone {
+fn with_game() -> impl Filter<
+    Extract = (Arc<Mutex<PokerGame>>,),
+    Error = std::convert::Infallible
+> +
+    Clone {
     warp::any().map(move || unsafe { GAME.clone().unwrap() })
 }
 
@@ -179,7 +195,7 @@ fn with_game(
 async fn ws_handler(
     game_id: String,
     ws: Ws,
-    peers: Peers,
+    peers: Peers
 ) -> Result<impl warp::Reply, warp::Rejection> {
     Ok(ws.on_upgrade(move |socket| handle_websocket(socket, game_id, peers)))
 }
@@ -235,7 +251,7 @@ async fn handle_websocket(socket: warp::ws::WebSocket, game_id: String, peers: P
 
 async fn publish_handler(
     body: PublishRequest,
-    peers: Peers,
+    peers: Peers
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let peers = peers.read().await;
     if let Some(tx) = peers.get(&body.game_id) {
@@ -243,11 +259,6 @@ async fn publish_handler(
         if let Err(e) = tx.send(msg) {
             error!("Error broadcasting event: {}", e);
         }
-    } else {
-        return Ok(warp::reply::with_status(
-            "Game ID not found",
-            StatusCode::NOT_FOUND,
-        ));
     }
 
     Ok(warp::reply::with_status("Event published", StatusCode::OK))
@@ -265,8 +276,6 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
         .as_elements()[0]
         .as_int();
 
-    let pot_value = game_account.storage().get_item(POT_VALUE).as_elements()[0].as_int();
-
     // Array with balance of players
     let mut player_balances: Vec<u64> = vec![];
 
@@ -279,12 +288,17 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
     // Player hand cards
     let mut player_hand_cards: Vec<Vec<u64>> = Vec::new();
 
+    // has player folded
+    let mut has_folded: Vec<u64> = vec![];
+
     // get balance and player's hands
     for i in 0..NO_OF_PLAYERS {
-        let balance_slot: u8 = PLAYER_BALANCE_SLOT + (i * 13) as u8;
-        let hands_slot: u8 = PLAYER_HANDS + (i * 13) as u8;
-        player_balances
-            .push(game_account.storage().get_item(balance_slot).as_elements()[0].as_int());
+        let balance_slot: u8 = PLAYER_BALANCE_SLOT + ((i * 13) as u8);
+        let hands_slot: u8 = PLAYER_HANDS + ((i * 13) as u8);
+        let has_folded_slot: u8 = FIRST_PLAYER_INDEX + i * 13 + IS_FOLD_OFFSET;
+        player_balances.push(
+            game_account.storage().get_item(balance_slot).as_elements()[0].as_int()
+        );
         // Hand Slot storage structure: [player card 1 index, player card 2 index, hand type, 0]
         let player_hand_slot_data = game_account
             .storage()
@@ -292,10 +306,15 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
             .as_elements()
             .to_vec();
         player_hands.push(player_hand_slot_data[2].as_int());
-        player_hand_cards.push(vec![
-            player_hand_slot_data[0].as_int(),
-            player_hand_slot_data[1].as_int(),
-        ])
+        player_hand_cards.push(
+            vec![player_hand_slot_data[0].as_int(), player_hand_slot_data[1].as_int()]
+        );
+        has_folded.push(game_account.storage().get_item(has_folded_slot).as_elements()[0].as_int());
+    }
+
+    let mut pot_value = 0;
+    for player_balance in player_balances.iter() {
+        pot_value += (PLAYER_INITIAL_BALANCE as u64) - player_balance;
     }
 
     for i in COMMUNITY_CARDS {
@@ -312,23 +331,34 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
         .get_item(CURRENT_PHASE_SLOT)
         .as_elements()[0]
         .as_int();
+    let highest_bet = game_account
+    .storage()
+    .get_item(HIGHEST_BET_SLOT)
+    .as_elements()[0]
+    .as_int();
 
-    Ok(warp::reply::json(&StatResponse {
-        community_cards,
-        player_balances,
-        current_player,
-        pot_value,
-        player_hands,
-        current_state,
-        player_hand_cards
-    }))
+    Ok(
+        warp::reply::json(
+            &(StatResponse {
+                community_cards,
+                player_balances,
+                current_player,
+                pot_value,
+                player_hands,
+                current_state,
+                player_hand_cards,
+                has_folded,
+                highest_bet
+            })
+        )
+    )
 }
 
 pub async fn checkmove_handler(
     body: CheckmoveRequest,
-    local_game: Arc<Mutex<PokerGame>>,
+    local_game: Arc<Mutex<PokerGame>>
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let mut game = local_game.lock().unwrap();
-    let result = game.check_move(body.action, body.player_id);
+    let result = game.check_move(body.action, body.player_id, body.game_id);
     Ok(warp::reply::json(&[result]))
 }

@@ -250,32 +250,32 @@ pub async fn unmask_community_cards(client: &mut AzeClient, game_account_id: Acc
         3 => FLOP_SLOT + 4,
         _ => FLOP_SLOT,
     };
-    // let set_cards_data = UnmaskTransactionData::new(
-    //     player_account_id,
-    //     game_account_id,
-    //     &cards,
-    //     card_slot,
-    // );
-    // let transaction_template = AzeTransactionTemplate::Unmask(set_cards_data);
-    // let txn_request = client
-    //     .build_aze_set_community_cards_tx_request(transaction_template)
-    //     .unwrap();
-    // execute_tx_and_sync(client, txn_request.clone()).await;
-    // let note_id = txn_request.expected_output_notes()[0].id();
-    // let note = client.get_input_note(note_id).unwrap();
-    // consume_notes(client, game_account_id, &[note.try_into().unwrap()]).await;
-    // // check cards
-    // let (game_account, _) = client.get_account(game_account_id).unwrap();
-    // let end_slot = match current_phase {
-    //     1 => FLOP_SLOT + 3,
-    //     2 => FLOP_SLOT + 4,
-    //     3 => FLOP_SLOT + 5,
-    //     _ => FLOP_SLOT + 3,
-    // };
-    // for (i, slot) in (card_slot..end_slot).enumerate() {
-    //     let card: [Felt; 4] = game_account.storage().get_item(slot).into();
-    //     assert_eq!(cards[i], [Felt::from(17 + i as u8), Felt::ZERO, Felt::ZERO, Felt::ZERO]);
-    // }
+    let set_cards_data = UnmaskTransactionData::new(
+        player_account_id,
+        game_account_id,
+        &cards,
+        card_slot,
+    );
+    let transaction_template = AzeTransactionTemplate::Unmask(set_cards_data);
+    let txn_request = client
+        .build_aze_set_community_cards_tx_request(transaction_template)
+        .unwrap();
+    execute_tx_and_sync(client, txn_request.clone()).await;
+    let note_id = txn_request.expected_output_notes()[0].id();
+    let note = client.get_input_note(note_id).unwrap();
+    consume_notes(client, game_account_id, &[note.try_into().unwrap()]).await;
+    // check cards
+    let (game_account, _) = client.get_account(game_account_id).unwrap();
+    let end_slot = match current_phase {
+        1 => FLOP_SLOT + 3,
+        2 => FLOP_SLOT + 4,
+        3 => FLOP_SLOT + 5,
+        _ => FLOP_SLOT + 3,
+    };
+    for (i, slot) in (card_slot..end_slot).enumerate() {
+        let card: [Felt; 4] = game_account.storage().get_item(slot).into();
+        assert_eq!(cards[i], [Felt::from(17 + i as u8), Felt::ZERO, Felt::ZERO, Felt::ZERO]);
+    }
 }
 
 pub async fn p2p_unmask_flow(client: &mut AzeClient, player_account_id: AccountId, card_slots: [u8; 2]) {

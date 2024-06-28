@@ -1,5 +1,6 @@
 [rpc]
 endpoint = { protocol = "http", host = "18.203.155.106", port = 57291 }
+timeout_ms = 20000
 
 [store]
 database_filepath = "store.sqlite3"

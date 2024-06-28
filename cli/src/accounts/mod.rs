@@ -32,7 +32,7 @@ use miden_lib::AuthScheme;
 use miden_objects::{
     accounts::{AccountId, AuthSecretKey},
     crypto::dsa::rpo_falcon512::{PublicKey, SecretKey},
-    notes::NoteType,
+    notes::{ NoteType, NoteTag, NoteExecutionHint },
     Felt, FieldElement
 };
 use tokio::time::{ sleep, Duration };
@@ -132,14 +132,22 @@ pub async fn consume_game_notes(account_id: AccountId) {
     let mut client: AzeClient = create_aze_client();
     client.sync_state().await.unwrap();
     let account = client.get_account(account_id).unwrap();
+    let expected_note_tag = NoteTag::from_account_id(account_id, NoteExecutionHint::Local).unwrap();
     let consumable_notes = client.get_consumable_notes(Some(account_id)).unwrap();
-    println!("Consumable notes: {:?}", consumable_notes.len());
+    let filtered_notes: Vec<_> = consumable_notes
+        .into_iter()
+        .filter(
+            |consumable_note| consumable_note.note.metadata().unwrap().tag() == expected_note_tag
+        )
+        .collect();
 
-    for consumable_note in consumable_notes {
+    println!("Consumable notes: {:?}", filtered_notes.len());
+
+    for consumable_note in filtered_notes {
         let tx_template = TransactionTemplate::ConsumeNotes(account_id, vec![consumable_note.note.id()]);
         let tx_request = client.build_transaction_request(tx_template).unwrap();
         execute_tx_and_sync(&mut client, tx_request).await;
-        sleep(Duration::from_secs(5)).await;
+        sleep(Duration::from_secs(2)).await;
     }
 }
 
