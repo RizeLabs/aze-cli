@@ -243,11 +243,6 @@ async fn publish_handler(
         if let Err(e) = tx.send(msg) {
             error!("Error broadcasting event: {}", e);
         }
-    } else {
-        return Ok(warp::reply::with_status(
-            "Game ID not found",
-            StatusCode::NOT_FOUND,
-        ));
     }
 
     Ok(warp::reply::with_status("Event published", StatusCode::OK))
