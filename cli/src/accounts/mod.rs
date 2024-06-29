@@ -61,6 +61,10 @@ pub async fn create_aze_game_account(
         Some(slot_data),
     )
     .unwrap();
+    
+    let tag: u64 = game_account.id().into();
+    let note_tag: NoteTag = ((tag + tag) as u32).into();
+    client.add_note_tag(note_tag).unwrap();
 
     // distribute cards
     let sender_account_id = game_account.id();
@@ -117,6 +121,9 @@ pub async fn create_aze_player_account(
         Some(seed),
         &AuthSecretKey::RpoFalcon512(key_pair),
     );
+    let tag: u64 = player_account.id().into();
+    let note_tag: NoteTag = ((tag + tag) as u32).into();
+    client.add_note_tag(note_tag).unwrap();
 
     Ok(player_account.id())
 }
@@ -125,8 +132,10 @@ pub async fn consume_game_notes(account_id: AccountId) {
     let mut client: AzeClient = create_aze_client();
     client.sync_state().await.unwrap();
     let account = client.get_account(account_id).unwrap();
-    let expected_note_tag = NoteTag::from_account_id(account_id, NoteExecutionHint::Local).unwrap();
+    let tag: u64 = account_id.into();
+    let expected_note_tag: NoteTag = ((tag + tag) as u32).into();
     let consumable_notes = client.get_consumable_notes(Some(account_id)).unwrap();
+    
     let filtered_notes: Vec<_> = consumable_notes
         .into_iter()
         .filter(
