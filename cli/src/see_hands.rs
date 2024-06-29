@@ -104,7 +104,7 @@ impl SeeHandsCmd {
             Yellow.bold().paint(format!(
                 "| {:^15}| {:15}| {:15} |",
                 "P2",
-                get_hand(stat_data.player_hands[0]).unwrap(),
+                get_hand(stat_data.player_hands[1]).unwrap(),
                 format!(
                     "{} {}",
                     card_from_number_unique(stat_data.player_hand_cards[1][0]),
@@ -116,7 +116,7 @@ impl SeeHandsCmd {
             Yellow.bold().paint(format!(
                 "| {:^15}| {:15}| {:15} |",
                 "P3",
-                get_hand(stat_data.player_hands[0]).unwrap(),
+                get_hand(stat_data.player_hands[2]).unwrap(),
                 format!(
                     "{} {}",
                     card_from_number_unique(stat_data.player_hand_cards[2][0]),
@@ -128,7 +128,7 @@ impl SeeHandsCmd {
             Yellow.bold().paint(format!(
                 "| {:^15}| {:15}| {:15} |",
                 "P4",
-                get_hand(stat_data.player_hands[0]).unwrap(),
+                get_hand(stat_data.player_hands[3]).unwrap(),
                 format!(
                     "{} {}",
                     card_from_number_unique(stat_data.player_hand_cards[3][0]),
@@ -146,16 +146,16 @@ impl SeeHandsCmd {
 
 fn get_hand(int_hand: u64) -> Result<(String), String> {
     let hand = match int_hand {
-        0 => "Royal Flush",
-        1 => "Straight Flush",
-        2 => "4 of Kind",
-        3 => "Full House",
-        4 => "Flush",
-        5 => "Straight",
-        6 => "3 of Kind",
-        7 => "Two Pair",
-        8 => "Pair",
-        9 => "High Card",
+        1 => "Royal Flush",
+        2 => "Straight Flush",
+        3 => "4 of Kind",
+        4 => "Full House",
+        5 => "Flush",
+        6 => "Straight",
+        7 => "3 of Kind",
+        8 => "Two Pair",
+        9 => "Pair",
+        10 => "High Card",
         _ => panic!("Invalid hand"),
     };
     Ok(hand.to_string())
