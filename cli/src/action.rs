@@ -6,6 +6,7 @@ use aze_lib::{
     utils::validate_action,
 };
 use aze_types::actions::{ActionType, GameActionResponse};
+use miden_objects::accounts::AccountId;
 use clap::{Parser, ValueEnum};
 use dialoguer::{Input, Select};
 use std::fs::File;

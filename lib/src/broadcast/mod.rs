@@ -27,7 +27,7 @@ use crate::constants::{
     IS_FOLD_OFFSET,
     HIGHEST_BET_SLOT,
     SMALL_BLIND_SLOT,
-    PLAYER_BET_SLOT
+    PLAYER_BET_OFFSET
 };
 use crate::gamestate::{ Check_Action, PokerGame };
 use crate::utils::Ws_config;
