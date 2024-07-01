@@ -50,7 +50,8 @@ pub fn create_send_card_note<
     
 
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -80,7 +81,8 @@ pub fn create_key_gen_note<
     let note_script = client.compile_note_script(script_ast, vec![]).unwrap();
 
     let note_inputs = NoteInputs::new(vec![]).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -113,7 +115,8 @@ pub fn create_shuffle_card_note<R: FeltRng, N: NodeRpcClient, S: Store, A: Trans
     
     
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -147,7 +150,8 @@ pub fn create_remask_note<R: FeltRng, N: NodeRpcClient, S: Store, A: Transaction
     
 
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -172,7 +176,8 @@ pub fn create_play_bet_note<R: FeltRng, N: NodeRpcClient, S: Store, A: Transacti
 
     let inputs = vec![Felt::from(player_bet)];
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -202,7 +207,8 @@ pub fn create_play_raise_note<
 
     let inputs = vec![Felt::from(player_bet)];
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -230,7 +236,8 @@ pub fn create_play_call_note<
     let note_script = client.compile_note_script(script_ast, vec![]).unwrap();
 
     let note_inputs = NoteInputs::new(vec![]).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -258,7 +265,8 @@ pub fn create_play_fold_note<
     let note_script = client.compile_note_script(script_ast, vec![]).unwrap();
 
     let note_inputs = NoteInputs::new(vec![]).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -286,7 +294,8 @@ pub fn create_play_check_note<
     let note_script = client.compile_note_script(script_ast, vec![]).unwrap();
 
     let note_inputs = NoteInputs::new(vec![]).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -322,7 +331,8 @@ pub fn create_set_cards_note<
     
 
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -358,7 +368,8 @@ pub fn create_set_community_cards_note<
     inputs = [inputs, vec![Felt::from(card_slot)]].concat();
 
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -387,7 +398,8 @@ pub fn create_send_unmasked_cards_note<R: FeltRng, N: NodeRpcClient, S: Store, A
     }
 
     let note_inputs = NoteInputs::new(unmasked_cards).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -419,7 +431,8 @@ pub fn create_unmask_note<R: FeltRng, N: NodeRpcClient, S: Store, A: Transaction
     
 
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -456,7 +469,8 @@ pub fn create_inter_unmask_note<
     
 
     let note_inputs = NoteInputs::new(encrypted_cards).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -489,7 +503,8 @@ pub fn create_set_hand_note<
     let inputs = vec![cards[0][0], cards[1][0], Felt::from(player_hand), Felt::from(player_index)];
 
     let note_inputs = NoteInputs::new(inputs).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
@@ -525,7 +540,8 @@ pub fn create_send_community_cards_note<
     community_cards = [community_cards, vec![Felt::from(current_phase)]].concat();
 
     let note_inputs = NoteInputs::new(community_cards).unwrap();
-    let tag = NoteTag::from_account_id(target_account_id, NoteExecutionHint::Local)?;
+    let tag: u64 = target_account_id.into();
+    let tag: NoteTag = ((tag + tag) as u32).into();
     let serial_num = rng.draw_word();
     let aux = ZERO;
 
