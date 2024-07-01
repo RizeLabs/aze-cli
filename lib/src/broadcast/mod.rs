@@ -25,7 +25,9 @@ use crate::constants::{
     PLAYER_INITIAL_BALANCE,
     FIRST_PLAYER_INDEX,
     IS_FOLD_OFFSET,
-    HIGHEST_BET_SLOT
+    HIGHEST_BET_SLOT,
+    SMALL_BLIND_SLOT,
+    PLAYER_BET_SLOT
 };
 use crate::gamestate::{ Check_Action, PokerGame };
 use crate::utils::Ws_config;
@@ -45,6 +47,8 @@ struct StatRequest {
 #[derive(Serialize)]
 struct StatResponse {
     pub community_cards: Vec<u64>,
+    pub player_ids: Vec<u64>,
+    pub player_bets: Vec<u64>,
     pub player_balances: Vec<u64>,
     pub current_player: u64,
     pub pot_value: u64,
@@ -52,7 +56,8 @@ struct StatResponse {
     pub current_state: u64,
     pub player_hand_cards: Vec<Vec<u64>>,
     pub has_folded: Vec<u64>,
-    pub highest_bet: u64
+    pub highest_bet: u64,
+    pub small_blind_amount: u64
 }
 
 #[derive(Deserialize, Serialize)]
@@ -291,11 +296,17 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
     // has player folded
     let mut has_folded: Vec<u64> = vec![];
 
+    let mut player_ids: Vec<u64> = vec![];
+    let mut player_bets: Vec<u64> = vec![];
+
     // get balance and player's hands
     for i in 0..NO_OF_PLAYERS {
         let balance_slot: u8 = PLAYER_BALANCE_SLOT + ((i * 13) as u8);
         let hands_slot: u8 = PLAYER_HANDS + ((i * 13) as u8);
         let has_folded_slot: u8 = FIRST_PLAYER_INDEX + i * 13 + IS_FOLD_OFFSET;
+        let player_id_slot: u8 = FIRST_PLAYER_INDEX + (i * 13);
+        let player_bet_slot: u8 = FIRST_PLAYER_INDEX + (i * 13) + PLAYER_BET_OFFSET;
+
         player_balances.push(
             game_account.storage().get_item(balance_slot).as_elements()[0].as_int()
         );
@@ -310,6 +321,20 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
             vec![player_hand_slot_data[0].as_int(), player_hand_slot_data[1].as_int()]
         );
         has_folded.push(game_account.storage().get_item(has_folded_slot).as_elements()[0].as_int());
+        player_ids.push(
+            game_account
+                .storage()
+                .get_item(player_id_slot)
+                .as_elements()[0]
+                .as_int(),
+        );
+        player_bets.push(
+            game_account
+                .storage()
+                .get_item(player_bet_slot)
+                .as_elements()[0]
+                .as_int(),
+        );
     }
 
     let mut pot_value = 0;
@@ -336,11 +361,18 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
     .get_item(HIGHEST_BET_SLOT)
     .as_elements()[0]
     .as_int();
+    let small_blind_amount = game_account
+        .storage()
+        .get_item(SMALL_BLIND_SLOT)
+        .as_elements()[0]
+        .as_int();
 
     Ok(
         warp::reply::json(
             &(StatResponse {
                 community_cards,
+                player_ids,
+                player_bets,
                 player_balances,
                 current_player,
                 pot_value,
@@ -348,7 +380,8 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
                 current_state,
                 player_hand_cards,
                 has_folded,
-                highest_bet
+                highest_bet,
+                small_blind_amount
             })
         )
     )

@@ -129,6 +129,8 @@ pub struct StatRequest {
 #[derive(Serialize, Deserialize)]
 pub struct StatResponse {
     pub community_cards: Vec<u64>,
+    pub player_ids: Vec<u64>,
+    pub player_bets: Vec<u64>,
     pub player_balances: Vec<u64>,
     pub current_player: u64,
     pub pot_value: u64,
@@ -137,6 +139,7 @@ pub struct StatResponse {
     pub player_hand_cards: Vec<Vec<u64>>,
     pub has_folded: Vec<u64>,
     pub highest_bet: u64,
+    pub small_blind_amount: u64,
 }
 
 // Config for saving broadcast url

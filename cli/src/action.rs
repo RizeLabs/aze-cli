@@ -1,6 +1,6 @@
 use crate::actions;
 use aze_lib::gamestate::Check_Action;
-use aze_lib::utils::{ Ws_config, Player };
+use aze_lib::utils::{ get_stats, Ws_config, Player, StatResponse };
 use aze_lib::{
     constants::{BUY_IN_AMOUNT, NO_OF_PLAYERS, SMALL_BLIND_AMOUNT, PLAYER_FILE_PATH},
     utils::validate_action,
@@ -19,24 +19,25 @@ impl ActionCmd {
     pub async fn execute(&self, ws_config_path: &std::path::PathBuf) -> Result<(), String> {
         let (playerid, gameid) = get_or_prompt_ids();
 
+        let available_actions: Vec<String> = get_available_actions(
+            playerid,
+            gameid,
+            ws_config_path
+        ).await;
+
         let action_type = Select::new()
             .with_prompt("What is your action type?")
-            .item("Raise")
-            .item("Small Blind")
-            .item("Big Blind")
-            .item("Call")
-            .item("Check")
-            .item("Fold")
+            .items(&available_actions)
             .interact()
             .expect("Failed to get action type");
 
-        let action_type = match action_type {
-            0 => ActionType::Raise,
-            1 => ActionType::SmallBlind,
-            2 => ActionType::BigBlind,
-            3 => ActionType::Call,
-            4 => ActionType::Check,
-            5 => ActionType::Fold,
+        let action_type = match available_actions[action_type].as_str() {
+            "Raise" => ActionType::Raise,
+            "Small Blind" => ActionType::SmallBlind,
+            "Big Blind" => ActionType::BigBlind,
+            "Call" => ActionType::Call,
+            "Check" => ActionType::Check,
+            "Fold" => ActionType::Fold,
             _ => panic!("Invalid action type selected"),
         };
 
@@ -136,4 +137,39 @@ fn get_or_prompt_ids() -> (u64, u64) {
         .expect("Failed to write player data to Player.toml file");
 
     (player_id, game_id)
+}
+
+async fn get_available_actions(
+    player_id: u64,
+    game_id: u64,
+    ws_config: &std::path::PathBuf
+) -> Vec<String> {
+    let ws_url = Ws_config::load(ws_config).url.unwrap();
+    let game_account_id = AccountId::try_from(game_id).unwrap();
+    let player_account_id = AccountId::try_from(player_id).unwrap();
+    let stat_data: StatResponse = get_stats(game_account_id.to_string(), ws_url).await.expect(
+        "Failed to get stats"
+    );
+
+    let mut available_actions: Vec<String> = vec![];
+    let player_index = stat_data.player_ids.iter().position(|x| x == &player_id).unwrap();
+    let player_last_bet = stat_data.player_bets[player_index];
+
+    if stat_data.pot_value == 0 {
+        available_actions.push("Small Blind".to_string());
+        available_actions.push("Fold".to_string());
+    } else if stat_data.highest_bet == stat_data.small_blind_amount {
+        available_actions.push("Big Blind".to_string());
+        available_actions.push("Fold".to_string());
+    } else if player_last_bet < stat_data.highest_bet {
+        available_actions.push("Raise".to_string());
+        available_actions.push("Call".to_string());
+        available_actions.push("Fold".to_string());
+    } else if player_last_bet == stat_data.highest_bet {
+        available_actions.push("Check".to_string());
+        available_actions.push("Raise".to_string());
+        available_actions.push("Fold".to_string());
+    }
+
+    available_actions
 }
