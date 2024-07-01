@@ -130,7 +130,12 @@ pub async fn create_aze_player_account(
 
 pub async fn consume_game_notes(account_id: AccountId) {
     let mut client: AzeClient = create_aze_client();
-    client.sync_state().await.unwrap();
+    let _ = match client.sync_state().await {
+        Ok(_) => (),
+        Err(e) => {
+            return;
+        }
+    };
     let account = client.get_account(account_id).unwrap();
     let tag: u64 = account_id.into();
     let expected_note_tag: NoteTag = ((tag + tag) as u32).into();
