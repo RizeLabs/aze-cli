@@ -51,7 +51,7 @@
 
   **Example usage**
   ```sh
-  aze-cli consume-notes
+  aze-cli receive-cards
 
 - ### aze-cli peek-hand
   Unmasks the player's cards.
