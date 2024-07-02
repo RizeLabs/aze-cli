@@ -412,6 +412,44 @@ export.play_fold
 
     eq
     # => [raiser_index == next_turn_index]
+    mem_store.2 movupw.3 dropw
+
+    # check if check_counter == no. of active players
+    push.NO_OF_PLAYERS_INDEX exec.account::get_item
+    drop drop drop dup push.1 
+    # => [1, no_of_players, no_of_players]
+
+    while.true
+        dup
+        # => [no_of_players, no_of_players, no_of_players]
+        push.1 sub
+        push.PLAYER_STATS_SLOTS mul
+        push.FIRST_PLAYER_INDEX add
+        # => [player_index, no_of_players, no_of_players]
+
+        push.10 add exec.account::get_item
+        drop drop drop
+        # => [is_fold, no_of_players, no_of_players]
+
+        if.true
+            swap push.1 sub swap
+            # => [no_of_players, active_players]
+        end
+
+        push.1 sub dup
+        push.0 gt
+        # => [0/1, no_of_players - 1, active_players]
+    end
+
+    # => [0, active_players]
+    drop
+    push.PLAYER_CHECK_COUNTER exec.account::get_item
+    # => [0, 0, 0, player_check_counter]
+    drop drop drop
+    # => [player_check_counter, active_players]
+    eq
+    # => [0/1]
+    mem_load.2 or
 
     if.true
         push.CURRENT_PHASE exec.account::get_item
