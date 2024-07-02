@@ -1,4 +1,3 @@
-use aze_enc::{ keygen, mask, remask, inter_unmask, final_unmask, CardCipher };
 use aze_lib::accounts::create_basic_aze_player_account;
 use aze_lib::client::{
     self, create_aze_client, AzeAccountTemplate, AzeClient, AzeGameMethods, AzeTransactionTemplate,
@@ -24,6 +23,7 @@ use aze_types::accounts::{
     AccountCreationError, AccountCreationRequest, AccountCreationResponse,
     PlayerAccountCreationRequest, PlayerAccountCreationResponse,
 };
+use aze_lib::utils::card_from_number;
 use miden_client::client::{
     accounts::{AccountStorageMode, AccountTemplate},
     transactions::transaction_request::TransactionTemplate,
@@ -210,16 +210,14 @@ pub async fn enc_action(action_type: u64, account_id: AccountId, target_account:
 pub async fn p2p_unmask_flow(sender_account_id: AccountId, cards: [[Felt; 4]; 3]) -> Result<(), String> {
     let mut client: AzeClient = create_aze_client();
     let (player_account, _) = client.get_account(sender_account_id).unwrap();
-
     let player_data = player_account.storage().get_item(PLAYER_DATA_SLOT).as_elements().to_vec();
-    let player_ids = [player_data[1].as_int(), player_data[2].as_int(), player_data[3].as_int()];
     let action_type = player_data[0].as_int() as u8;
 
     let index_bound = NO_OF_PLAYERS * (NO_OF_PLAYERS - 1);
     let modulo = action_type % index_bound;
     let next_player_idx = ((modulo as f64) / (NO_OF_PLAYERS as f64)).ceil() as u8;
     
-    let receiver_account_id = AccountId::try_from(player_ids[next_player_idx as usize]).unwrap();
+    let receiver_account_id = AccountId::try_from(player_data[next_player_idx as usize].as_int()).unwrap();
     // send inter-unmask note
     let inter_unmask_data = InterUnmaskTransactionData::new(
         sender_account_id,
@@ -239,7 +237,6 @@ pub async fn p2p_unmask_flow(sender_account_id: AccountId, cards: [[Felt; 4]; 3]
 pub async fn self_unmask(account_id: AccountId, card_slot: u8) -> Result<(), String> {
     let mut client: AzeClient = create_aze_client();
     let (player_account, _) = client.get_account(account_id).unwrap();
-
     let mut cards: [[Felt; 4]; 3] = [[Felt::ZERO; 4]; 3];
     for (i, slot) in (TEMP_CARD_SLOT..TEMP_CARD_SLOT + 3).enumerate() {
         let card_digest = player_account.storage().get_item(slot);
@@ -261,7 +258,12 @@ pub async fn self_unmask(account_id: AccountId, card_slot: u8) -> Result<(), Str
     let note_id = txn_request.expected_output_notes()[0].id();
     let note = client.get_input_note(note_id).unwrap();
     consume_notes(&mut client, account_id, &[note.try_into().unwrap()]).await;
-
+    let (player_account, _) = client.get_account(account_id).unwrap();
+    for (i, slot) in (PLAYER_CARD1_SLOT..PLAYER_CARD2_SLOT + 1).enumerate() {
+        let card_digest: [Felt; 4] = player_account.storage().get_item(slot).into();
+        let card = card_from_number(card_digest[0].as_int());
+        println!("Card {}: {}", i + 1, card);
+    }
     Ok(())
 }
 

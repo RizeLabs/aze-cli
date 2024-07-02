@@ -76,11 +76,10 @@ impl ConsumeNotesCmd {
                 let action_type = player_data[0].as_int();
                 let requester_id_post = requester_info[0].as_int();
                 let community_card_post = player_account.storage().get_item(TEMP_CARD_SLOT).as_elements().to_vec();
-
                 // if requester_id has changed post consumption
                 if requester_id != requester_id_post {
-
-                    if community_card != community_card_post {
+                    if community_card != community_card_post && action_type > 16 {
+                        println!("Community card has changed");
                         let mut cards: [[Felt; 4]; 3] = [[Felt::ZERO; 4]; 3];
                         for (i, slot) in (TEMP_CARD_SLOT..TEMP_CARD_SLOT + 3).enumerate() {
                             let card_digest = player_account.storage().get_item(slot);
@@ -89,7 +88,7 @@ impl ConsumeNotesCmd {
                         p2p_unmask_flow(account_id, cards).await;
                         return
                     }
-
+                    
                     let requester_account_id = AccountId::try_from(requester_id_post).unwrap();
                     send_unmasked_cards(account_id, requester_account_id).await;
                 }
@@ -105,9 +104,11 @@ impl ConsumeNotesCmd {
                     let target_account = AccountId::try_from(
                         player_data[action_type as usize]
                     ).unwrap();
+                    println!("Player is masking cards");
                     enc_action(action_type, account_id, target_account).await;
                 } else if action_type == 4 {
                     let target_account = AccountId::try_from(game_id).unwrap();
+                    println!("Cards masked! sending to game account");
                     enc_action(action_type, account_id, target_account).await;
                 } else if
                     (5..13).contains(&action_type) ||
@@ -120,8 +121,10 @@ impl ConsumeNotesCmd {
                         let card_digest = player_account.storage().get_item(slot);
                         cards[i] = card_digest.into();
                     }
+                    println!("Player is inter-unmasking cards");
                     p2p_unmask_flow(account_id, cards).await;
                 } else if (13..17).contains(&action_type) {
+                    println!("Player is final unmasking cards");
                     self_unmask(account_id, PLAYER_CARD1_SLOT).await;
                 } else if
                     (25..29).contains(&action_type) ||
