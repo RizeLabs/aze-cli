@@ -16,7 +16,7 @@ use miden_objects::{
 };
 
 use crate::{
-    broadcast::CheckmoveRequest,
+    broadcast::{CheckmoveRequest, SubmitIdenRequest},
     client::{AzeAccountTemplate, AzeClient, AzeGameMethods},
     constants::{
         BUY_IN_AMOUNT, CURRENT_TURN_INDEX_SLOT, HIGHEST_BET, NO_OF_PLAYERS, PLAYER_INITIAL_BALANCE,
@@ -43,6 +43,7 @@ use std::{fs::File, io::Read, path::Path};
 
 use reqwest::Client as httpClient;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::error::Error;
 
 // use uuid::Uuid;
@@ -140,6 +141,7 @@ pub struct StatResponse {
     pub has_folded: Vec<u64>,
     pub highest_bet: u64,
     pub small_blind_amount: u64,
+    pub player_identifiers: HashMap<u64, String>
 }
 
 // Config for saving broadcast url
@@ -218,6 +220,27 @@ pub async fn get_stats(game_id: String, url: String) -> Result<StatResponse, Box
     }
 }
 
+pub async fn add_identifier(player_id: u64, identifier: String, url: &String) -> Result<(), Box<dyn Error>>{
+    let client = httpClient::new();
+    let url = url::Url::parse(&url).unwrap();
+    let base_url = format!("http://{}", url.host_str().unwrap());
+    let port = url.port().map(|p| format!(":{}", p)).unwrap_or_default();
+    let iden_url = format!("{}{}{}", base_url, port, "/submitiden");
+
+    let request_body = SubmitIdenRequest {player_id, identifier};
+
+    let response = client.post(&iden_url).json(&request_body).send().await?;
+
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        let status = response.status();
+        let error_text = response.text().await?;
+        eprintln!("Failed to get stats: {} - {}", status, error_text);
+        Err(format!("Failed to get stats: {} - {}", status, error_text).into())
+    }
+}
+
 pub async fn validate_action(
     action: Check_Action,
     url: String,
@@ -250,9 +273,9 @@ pub async fn validate_action(
 
 #[derive(Serialize, Deserialize)]
 pub struct Player {
-    player_id: u64,
-    identifier: String,
-    game_id: Option<u64>,
+    pub player_id: u64,
+    pub identifier: String,
+    pub game_id: Option<u64>,
 }
 
 impl Player {
