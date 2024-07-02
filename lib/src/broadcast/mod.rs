@@ -49,7 +49,8 @@ struct StatResponse {
     pub player_hand_cards: Vec<Vec<u64>>,
     pub has_folded: Vec<u64>,
     pub highest_bet: u64,
-    pub small_blind_amount: u64
+    pub small_blind_amount: u64,
+    pub player_identifiers: HashMap<u64, String>
 }
 
 #[derive(Deserialize, Serialize)]
@@ -57,6 +58,11 @@ pub struct CheckmoveRequest {
     pub player_id: u64,
     pub game_id: u64,
     pub action: Check_Action
+}
+#[derive(Deserialize, Serialize)]
+pub struct SubmitIdenRequest {
+    pub player_id: u64,
+    pub identifier: String,
 }
 
 pub fn initialise_server(
@@ -93,6 +99,7 @@ pub fn initialise_server(
         let stats_route = warp::path("stats")
             .and(warp::post())
             .and(warp::body::json())
+            .and(with_game())
             .and_then(stat_handler);
 
         let checkmove_route = warp::path("checkmove")
@@ -101,10 +108,17 @@ pub fn initialise_server(
             .and(with_game())
             .and_then(checkmove_handler);
 
+        let submit_iden = warp::path("submitiden")
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_game())
+            .and_then(submitiden_handler);
+
         let routes = ws_route
             .or(publish_route)
             .or(stats_route)
             .or(checkmove_route)
+            .or(submit_iden)
             .with(warp::log("broadcast_server"));
 
         info!(
@@ -256,11 +270,12 @@ async fn publish_handler(
     Ok(warp::reply::with_status("Event published", StatusCode::OK))
 }
 
-async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejection> {
+async fn stat_handler(body: StatRequest, local_game: Arc<Mutex<PokerGame>>,) -> Result<impl warp::Reply, warp::Rejection> {
     let game_id = body.game_id;
     let mut client: AzeClient = create_aze_client();
     let game_account_id = AccountId::from_hex(&game_id).unwrap();
     let game_account = client.get_account(game_account_id).unwrap().0;
+    let mut game = local_game.lock().unwrap();
 
     let current_turn_player_id = game_account
         .storage()
@@ -361,6 +376,7 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
         .get_item(SMALL_BLIND_SLOT)
         .as_elements()[0]
         .as_int();
+    let player_identifiers = game.player_iden.clone();
 
     Ok(warp::reply::json(&StatResponse {
         community_cards,
@@ -374,7 +390,8 @@ async fn stat_handler(body: StatRequest) -> Result<impl warp::Reply, warp::Rejec
         player_hand_cards,
         has_folded,
         highest_bet,
-        small_blind_amount
+        small_blind_amount,
+        player_identifiers
     }))
 }
 
@@ -385,4 +402,13 @@ pub async fn checkmove_handler(
     let mut game = local_game.lock().unwrap();
     let result = game.check_move(body.action, body.player_id, body.game_id);
     Ok(warp::reply::json(&[result]))
+}
+
+async fn submitiden_handler(
+    body: SubmitIdenRequest,
+    local_game: Arc<Mutex<PokerGame>>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    let mut game = local_game.lock().unwrap();
+    let _ = game.add_iden(body.player_id, body.identifier);
+    Ok(warp::reply::with_status("Iden Added", StatusCode::OK))
 }
