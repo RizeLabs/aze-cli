@@ -156,7 +156,7 @@ fn get_hand(int_hand: u64) -> Result<(String), String> {
         8 => "Two Pair",
         9 => "Pair",
         10 => "High Card",
-        _ => panic!("Invalid hand"),
+        _ => "NA",
     };
     Ok(hand.to_string())
 }
