@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use aze_types::actions::ActionType;
 use miden_objects::accounts::AccountId;
 use serde::{Deserialize, Serialize};
@@ -21,6 +23,7 @@ struct Player {
 #[derive(Debug, Clone)]
 pub struct PokerGame {
     players: Vec<Player>,
+    pub player_iden: HashMap<u64, String>,
     small_blind: u64,
     big_blind: u64,
     pot: u64,
@@ -45,9 +48,10 @@ impl PokerGame {
                 has_folded: false,
             })
             .collect();
-
+        let player_iden = HashMap::new();
         PokerGame {
             players,
+            player_iden,
             small_blind,
             big_blind,
             pot: 0,
@@ -159,5 +163,12 @@ impl PokerGame {
         }
 
         true
+    }
+
+    pub fn add_iden(&mut self, player_id: u64, iden: String) {
+        if self.player_iden.contains_key(&player_id) {
+            return;
+        }
+        self.player_iden.insert(player_id, iden);
     }
 }

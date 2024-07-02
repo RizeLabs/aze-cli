@@ -69,14 +69,38 @@ impl StatsCmd {
             Yellow.bold().paint(format!(
                 "|     {:^20} {:^20}     |",
                 if stat_data.has_folded[0] == 0 {
-                    format!("P1")
+                    format!(
+                        "{}",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[0])
+                            .unwrap()
+                    )
                 } else {
-                    format!("P1 [Folded]")
+                    format!(
+                        "{} [Folded]",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[0])
+                            .unwrap()
+                    )
                 },
                 if stat_data.has_folded[1] == 0 {
-                    format!("P2")
+                    format!(
+                        "{}",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[1])
+                            .unwrap()
+                    )
                 } else {
-                    format!("P2 [Folded]")
+                    format!(
+                        "{} [Folded]",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[1])
+                            .unwrap()
+                    )
                 },
             )),
             Yellow.bold().paint(format!(
@@ -101,14 +125,38 @@ impl StatsCmd {
             Yellow.bold().paint(format!(
                 "|     {:^20} {:^20}     |",
                 if stat_data.has_folded[2] == 0 {
-                    format!("P3")
+                    format!(
+                        "{}",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[2])
+                            .unwrap()
+                    )
                 } else {
-                    format!("P3 [Folded]")
+                    format!(
+                        "{} [Folded]",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[2])
+                            .unwrap()
+                    )
                 },
                 if stat_data.has_folded[3] == 0 {
-                    format!("P4")
+                    format!(
+                        "{}",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[3])
+                            .unwrap()
+                    )
                 } else {
-                    format!("P4 [Folded]")
+                    format!(
+                        "{} [Folded]",
+                        stat_data
+                            .player_identifiers
+                            .get(&stat_data.player_ids[3])
+                            .unwrap()
+                    )
                 }
             )),
             Yellow.bold().paint(format!(
@@ -120,7 +168,13 @@ impl StatsCmd {
                 .paint("|---------------------------------------------------|"),
             Yellow.bold().paint(format!(
                 "|          {:^31}          |",
-                format!("Turn: {}", stat_data.current_player)
+                format!(
+                    "Turn: {}",
+                    stat_data
+                        .player_identifiers
+                        .get(&stat_data.current_player)
+                        .unwrap()
+                )
             )),
             Blue.bold()
                 .paint("+---------------------------------------------------+")
@@ -145,89 +199,38 @@ fn get_community_cards(phase: u64, community_cards: Vec<Vec<u64>>) -> Vec<String
     match phase {
         1 => {
             vec![
-                card_from_number(
-                    community_cards[0][0],
-                    community_cards[0][1],
-                ),
-                card_from_number(
-                    community_cards[1][0],
-                    community_cards[1][1],
-                ),
-                card_from_number(
-                    community_cards[2][0],
-                    community_cards[2][1],
-                ),
+                card_from_number(community_cards[0][0], community_cards[0][1]),
+                card_from_number(community_cards[1][0], community_cards[1][1]),
+                card_from_number(community_cards[2][0], community_cards[2][1]),
                 "NA".to_string(),
                 "NA".to_string(),
             ]
         }
         2 => {
             vec![
-                card_from_number(
-                    community_cards[0][0],
-                    community_cards[0][1],
-                ),
-                card_from_number(
-                    community_cards[1][0],
-                    community_cards[1][1],
-                ),
-                card_from_number(
-                    community_cards[2][0],
-                    community_cards[2][1],
-                ),
-                card_from_number(
-                    community_cards[3][0],
-                    community_cards[3][1],
-                ),
+                card_from_number(community_cards[0][0], community_cards[0][1]),
+                card_from_number(community_cards[1][0], community_cards[1][1]),
+                card_from_number(community_cards[2][0], community_cards[2][1]),
+                card_from_number(community_cards[3][0], community_cards[3][1]),
                 "NA".to_string(),
             ]
         }
         3 => {
             vec![
-                card_from_number(
-                    community_cards[0][0],
-                    community_cards[0][1],
-                ),
-                card_from_number(
-                    community_cards[1][0],
-                    community_cards[1][1],
-                ),
-                card_from_number(
-                    community_cards[2][0],
-                    community_cards[2][1],
-                ),
-                card_from_number(
-                    community_cards[3][0],
-                    community_cards[3][1],
-                ),
-                card_from_number(
-                    community_cards[4][0],
-                    community_cards[4][1],
-                ),
+                card_from_number(community_cards[0][0], community_cards[0][1]),
+                card_from_number(community_cards[1][0], community_cards[1][1]),
+                card_from_number(community_cards[2][0], community_cards[2][1]),
+                card_from_number(community_cards[3][0], community_cards[3][1]),
+                card_from_number(community_cards[4][0], community_cards[4][1]),
             ]
         }
         4 => {
             vec![
-                card_from_number(
-                    community_cards[0][0],
-                    community_cards[0][1],
-                ),
-                card_from_number(
-                    community_cards[1][0],
-                    community_cards[1][1],
-                ),
-                card_from_number(
-                    community_cards[2][0],
-                    community_cards[2][1],
-                ),
-                card_from_number(
-                    community_cards[3][0],
-                    community_cards[3][1],
-                ),
-                card_from_number(
-                    community_cards[4][0],
-                    community_cards[4][1],
-                ),
+                card_from_number(community_cards[0][0], community_cards[0][1]),
+                card_from_number(community_cards[1][0], community_cards[1][1]),
+                card_from_number(community_cards[2][0], community_cards[2][1]),
+                card_from_number(community_cards[3][0], community_cards[3][1]),
+                card_from_number(community_cards[4][0], community_cards[4][1]),
             ]
         }
         _ => vec![

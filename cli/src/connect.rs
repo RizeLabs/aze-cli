@@ -1,6 +1,6 @@
 use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use aze_lib::constants::PLAYER_FILE_PATH;
-use aze_lib::utils::{Player, Ws_config};
+use aze_lib::utils::{add_identifier, Player, Ws_config};
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
 use miden_objects::accounts::{Account, AccountId};
@@ -26,7 +26,7 @@ impl ConnectCmd {
         config.url = Some(self.url.to_string());
         config.save(config_path);
 
-        // add game id to PLayer.toml
+        // add game id to Player.toml
         let url = url::Url::parse(&self.url).unwrap();
         let game_id_hex = url
             .path_segments()
@@ -37,9 +37,12 @@ impl ConnectCmd {
         let game_id: u64 = AccountId::from_hex(&game_id_hex).unwrap().into();
         let config_str = fs::read_to_string(PLAYER_FILE_PATH)?;
         let mut config: Player = toml::from_str(&config_str)?;
+        let player_id = config.player_id.clone();
+        let identifier = config.identifier.clone();
         config.game_id = Some(game_id);
         let updated_config_str = toml::to_string(&config)?;
         fs::write(PLAYER_FILE_PATH, updated_config_str)?;
+        let _ = add_identifier(player_id, identifier, &self.url).await;
 
         println!("Connected to the game server at {}", self.url);
 
