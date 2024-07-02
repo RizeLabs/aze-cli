@@ -194,7 +194,7 @@ impl InitCmd {
                             }
 
                             // broadcast message if game ends
-                            if phase == 3 {
+                            if pre_phase == 3 {
                                 let _ = broadcast_message(
                                     game_account_id.to_string(),
                                     ws_url.clone(),
