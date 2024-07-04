@@ -33,15 +33,15 @@ begin
 
     repeat.NO_OF_CARDS
 
-        loc_load.0 mem_loadw drop drop
-        # => [Cb, Ca]
+        loc_load.0 mem_loadw drop drop drop
+        # => [card]
         dup push.0 neq 
-        # => [0/1, Cb, Ca]
+        # => [0/1, card]
 
         if.true
 
-            loc_load.2
-            # => [card_index, Cb, Ca]
+            push.0 loc_load.2
+            # => [card_index, 0, card]
 
             call.set_cards
             # => [...]

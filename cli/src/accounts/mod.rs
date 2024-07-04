@@ -84,7 +84,7 @@ pub async fn create_aze_game_account(
         .build_aze_shuffle_card_tx_request(transaction_template)
         .unwrap();
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
-    
+
     Ok(game_account_id)
 }
 
@@ -258,12 +258,7 @@ pub async fn self_unmask(account_id: AccountId, card_slot: u8) -> Result<(), Str
     let note_id = txn_request.expected_output_notes()[0].id();
     let note = client.get_input_note(note_id).unwrap();
     consume_notes(&mut client, account_id, &[note.try_into().unwrap()]).await;
-    let (player_account, _) = client.get_account(account_id).unwrap();
-    for (i, slot) in (PLAYER_CARD1_SLOT..PLAYER_CARD2_SLOT + 1).enumerate() {
-        let card_digest: [Felt; 4] = player_account.storage().get_item(slot).into();
-        let card = card_from_number(card_digest[0].as_int());
-        println!("Card {}: {}", i + 1, card);
-    }
+    
     Ok(())
 }
 

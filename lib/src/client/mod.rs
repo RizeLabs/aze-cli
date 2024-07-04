@@ -1396,12 +1396,44 @@ impl<N: NodeRpcClient, R: FeltRng, S: Store, A: TransactionAuthenticator> AzeGam
         let note_tag = created_note.metadata().tag().inner();
         let note_type = NoteType::Public;
 
-        let tx_script = ProgramAst::parse(
-            &AUTH_SEND_NOTE_SCRIPT
-                .replace("{recipient}", &recipient)
-                .replace("{note_type}", &Felt::from(note_type as u8).to_string())
-                .replace("{tag}", &Felt::new(note_tag.into()).to_string())
-        ).unwrap();
+        let tx_script = format!(
+            "\
+            use.miden::account
+            use.miden::contracts::auth::basic->auth_tx
+            use.miden::contracts::wallets::basic->wallet
+            use.miden::tx
+
+            proc.tx_state_change
+                push.254 exec.account::get_item
+                add.1
+                push.254 exec.account::set_item
+                dropw dropw
+            end
+
+            proc.set_requester_data
+                # => [0, 0, 0, requester_id]
+                push.102 exec.account::set_item
+                dropw dropw 
+            end
+
+            begin
+                dropw
+                call.set_requester_data
+                push.{recipient}
+                push.{note_type}
+                push.{tag}
+                call.tx::create_note 
+                drop drop dropw dropw
+                call.tx_state_change dropw
+                call.auth_tx::auth_tx_rpo_falcon512
+                # => []
+            end
+            ",
+            recipient = recipient,
+            note_type = Felt::from(note_type as u8),
+            tag = Felt::new(note_tag.into()),
+        );
+        let tx_script = ProgramAst::parse(&tx_script).unwrap();
 
         let (pubkey_input, advice_map): (Word, Vec<Felt>) = match account_auth {
             AuthSecretKey::RpoFalcon512(key) => (
