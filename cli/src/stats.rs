@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-use ansi_term::Colour::{ Blue, Green, Red, Yellow };
+use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use aze_lib::{
-    client::{ create_aze_client, AzeClient },
+    client::{create_aze_client, AzeClient},
     constants::PLAYER_FILE_PATH,
-    utils::{ card_from_number, get_stats, Ws_config, Player },
+    utils::{card_from_number_split, get_stats, Player, Ws_config},
 };
 use clap::Parser;
 use dialoguer::Input;
@@ -20,11 +20,10 @@ impl StatsCmd {
         let mut client: AzeClient = create_aze_client();
         let game_account_id = AccountId::try_from(gameid).unwrap();
         let ws_url = Ws_config::load(ws_config).url.unwrap();
-        let stat_data: aze_lib::utils::StatResponse = get_stats(
-            game_account_id.to_string(),
-            ws_url
-        ).await?;
-
+        let stat_data: aze_lib::utils::StatResponse =
+            get_stats(game_account_id.to_string(), ws_url).await?;
+        let community_cards: Vec<String> =
+            get_community_cards(stat_data.current_state, stat_data.community_cards);
         let poker_table = format!(
             "{}\n\
              {}\n\
@@ -186,9 +185,9 @@ impl StatsCmd {
 
 fn get_id() -> u64 {
     let path = Path::new(PLAYER_FILE_PATH);
-    let player: Player = toml
-        ::from_str(&std::fs::read_to_string(path).expect("Failed to read Player.toml"))
-        .expect("Failed to deserialize player data");
+    let player: Player =
+        toml::from_str(&std::fs::read_to_string(path).expect("Failed to read Player.toml"))
+            .expect("Failed to deserialize player data");
     let game_id = player.game_id().unwrap();
 
     game_id
@@ -198,38 +197,38 @@ fn get_community_cards(phase: u64, community_cards: Vec<Vec<u64>>) -> Vec<String
     match phase {
         1 => {
             vec![
-                card_from_number(community_cards[0][0], community_cards[0][1]),
-                card_from_number(community_cards[1][0], community_cards[1][1]),
-                card_from_number(community_cards[2][0], community_cards[2][1]),
+                card_from_number_split(community_cards[0][0], community_cards[0][1]),
+                card_from_number_split(community_cards[1][0], community_cards[1][1]),
+                card_from_number_split(community_cards[2][0], community_cards[2][1]),
                 "NA".to_string(),
                 "NA".to_string(),
             ]
         }
         2 => {
             vec![
-                card_from_number(community_cards[0][0], community_cards[0][1]),
-                card_from_number(community_cards[1][0], community_cards[1][1]),
-                card_from_number(community_cards[2][0], community_cards[2][1]),
-                card_from_number(community_cards[3][0], community_cards[3][1]),
+                card_from_number_split(community_cards[0][0], community_cards[0][1]),
+                card_from_number_split(community_cards[1][0], community_cards[1][1]),
+                card_from_number_split(community_cards[2][0], community_cards[2][1]),
+                card_from_number_split(community_cards[3][0], community_cards[3][1]),
                 "NA".to_string(),
             ]
         }
         3 => {
             vec![
-                card_from_number(community_cards[0][0], community_cards[0][1]),
-                card_from_number(community_cards[1][0], community_cards[1][1]),
-                card_from_number(community_cards[2][0], community_cards[2][1]),
-                card_from_number(community_cards[3][0], community_cards[3][1]),
-                card_from_number(community_cards[4][0], community_cards[4][1]),
+                card_from_number_split(community_cards[0][0], community_cards[0][1]),
+                card_from_number_split(community_cards[1][0], community_cards[1][1]),
+                card_from_number_split(community_cards[2][0], community_cards[2][1]),
+                card_from_number_split(community_cards[3][0], community_cards[3][1]),
+                card_from_number_split(community_cards[4][0], community_cards[4][1]),
             ]
         }
         4 => {
             vec![
-                card_from_number(community_cards[0][0], community_cards[0][1]),
-                card_from_number(community_cards[1][0], community_cards[1][1]),
-                card_from_number(community_cards[2][0], community_cards[2][1]),
-                card_from_number(community_cards[3][0], community_cards[3][1]),
-                card_from_number(community_cards[4][0], community_cards[4][1]),
+                card_from_number_split(community_cards[0][0], community_cards[0][1]),
+                card_from_number_split(community_cards[1][0], community_cards[1][1]),
+                card_from_number_split(community_cards[2][0], community_cards[2][1]),
+                card_from_number_split(community_cards[3][0], community_cards[3][1]),
+                card_from_number_split(community_cards[4][0], community_cards[4][1]),
             ]
         }
         _ => vec![

@@ -7,9 +7,6 @@ use std::path::PathBuf;
 use futures_util::{StreamExt, SinkExt}; // Import the required traits
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::protocol::Message;
-use aze_lib::utils::{ Player, Ws_config };
-use aze_lib::constants::PLAYER_FILE_PATH;
-use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use miden_objects::accounts::{Account, AccountId};
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};

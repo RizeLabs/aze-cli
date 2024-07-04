@@ -330,3 +330,28 @@ pub fn card_from_number(num: u64) -> String {
 
     format!("{}{}", rank, suit)
 }
+
+pub fn card_from_number_split(suit: u64, rank: u64) -> String {
+    if rank == 0 || suit == 0 {
+        return String::from("NA");
+    }
+
+    let suit_ = match suit {
+        1 => "♣".to_string(),
+        2 => "♦".to_string(),
+        3 => "♥".to_string(),
+        4 => "♠".to_string(),
+        _ => "".to_string(),
+    };
+
+    let rank_ = match (rank - 1) % 13 + 1 {
+        1 => "A".to_string(),
+        11 => "J".to_string(),
+        12 => "Q".to_string(),
+        13 => "K".to_string(),
+        n => n.to_string(),
+    };
+
+    format!("{}{}", rank_, suit_)
+}
+
