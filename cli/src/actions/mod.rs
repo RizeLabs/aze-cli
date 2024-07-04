@@ -1,41 +1,48 @@
 use aze_lib::client::{
-    create_aze_client, AzeAccountTemplate, AzeClient, AzeGameMethods, AzeTransactionTemplate,
-    PlayBetTransactionData, PlayCallTransactionData, PlayCheckTransactionData,
-    PlayFoldTransactionData, PlayRaiseTransactionData,
+    create_aze_client,
+    AzeAccountTemplate,
+    AzeClient,
+    AzeGameMethods,
+    AzeTransactionTemplate,
+    PlayBetTransactionData,
+    PlayCallTransactionData,
+    PlayCheckTransactionData,
+    PlayFoldTransactionData,
+    PlayRaiseTransactionData,
 };
-use aze_lib::constants::{HIGHEST_BET_SLOT, SMALL_BUY_IN_AMOUNT};
+use aze_lib::constants::{ HIGHEST_BET_SLOT, SMALL_BUY_IN_AMOUNT };
 use aze_lib::executor::execute_tx_and_sync;
 use aze_lib::storage::GameStorageSlotData;
-use aze_types::actions::{GameActionError, GameActionResponse};
+use aze_types::actions::{ GameActionError, GameActionResponse };
 use miden_client::client::{
-    accounts::{AccountStorageMode, AccountTemplate},
+    accounts::{ AccountStorageMode, AccountTemplate },
     transactions::transaction_request::TransactionTemplate,
 };
-use miden_objects::{accounts::AccountId, notes::NoteType};
+use miden_objects::{ accounts::AccountId, notes::NoteType };
 
-use aze_lib::utils::{broadcast_message, read_player_data, Ws_config};
+use aze_lib::utils::{ broadcast_message, read_player_data, Ws_config };
 
 pub async fn raise(
     player_id: u64,
     game_id: u64,
     amount: Option<u8>,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     let mut client: AzeClient = create_aze_client();
     let player_account_id = AccountId::try_from(player_id).unwrap();
     let game_account_id = AccountId::try_from(game_id).unwrap();
     let ws_url = Ws_config::load(ws_config_path).url.unwrap();
 
-    let playraise_txn_data =
-        PlayRaiseTransactionData::new(player_account_id, game_account_id, amount.unwrap());
+    let playraise_txn_data = PlayRaiseTransactionData::new(
+        player_account_id,
+        game_account_id,
+        amount.unwrap()
+    );
 
     let transaction_template = AzeTransactionTemplate::PlayRaise(playraise_txn_data);
-    let txn_request = client
-        .build_aze_play_raise_tx_request(transaction_template)
-        .unwrap();
+    let txn_request = client.build_aze_play_raise_tx_request(transaction_template).unwrap();
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
-    // note to be consumed by game account
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
@@ -43,9 +50,8 @@ pub async fn raise(
             "Player: {} plays raise by amount: {}",
             read_player_data().expect("Failed to read player data from Player.toml"),
             amount.unwrap()
-        ),
-    )
-    .await;
+        )
+    ).await;
 
     Ok(GameActionResponse { is_taken: true })
 }
@@ -53,7 +59,7 @@ pub async fn raise(
 pub async fn call(
     player_id: u64,
     game_id: u64,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     let mut client: AzeClient = create_aze_client();
     let player_account_id = AccountId::try_from(player_id).unwrap();
@@ -74,28 +80,25 @@ pub async fn call(
     let playcall_txn_data = PlayCallTransactionData::new(player_account_id, game_account_id);
 
     let transaction_template = AzeTransactionTemplate::PlayCall(playcall_txn_data);
-    let txn_request = client
-        .build_aze_play_call_tx_request(transaction_template)
-        .unwrap();
+    let txn_request = client.build_aze_play_call_tx_request(transaction_template).unwrap();
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
-    // note to be consumed by game account
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
         format!(
             "Player: {} plays call ",
             read_player_data().expect("Failed to read player data from Player.toml")
-        ),
-    )
-    .await;
+        )
+    ).await;
+
     Ok(GameActionResponse { is_taken: true })
 }
 
 pub async fn check(
     player_id: u64,
     game_id: u64,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     let mut client: AzeClient = create_aze_client();
     let player_account_id = AccountId::try_from(player_id).unwrap();
@@ -116,28 +119,25 @@ pub async fn check(
     let playcheck_txn_data = PlayCheckTransactionData::new(player_account_id, game_account_id);
 
     let transaction_template = AzeTransactionTemplate::PlayCheck(playcheck_txn_data);
-    let txn_request = client
-        .build_aze_play_check_tx_request(transaction_template)
-        .unwrap();
+    let txn_request = client.build_aze_play_check_tx_request(transaction_template).unwrap();
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
-    // note to be consumed by game account
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
         format!(
             "Player: {} plays check",
             read_player_data().expect("Failed to read player data from Player.toml")
-        ),
-    )
-    .await;
+        )
+    ).await;
+
     Ok(GameActionResponse { is_taken: true })
 }
 
 pub async fn fold(
     player_id: u64,
     game_id: u64,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     let mut client: AzeClient = create_aze_client();
     let player_account_id = AccountId::try_from(player_id).unwrap();
@@ -158,21 +158,18 @@ pub async fn fold(
     let playfold_txn_data = PlayFoldTransactionData::new(player_account_id, game_account_id);
 
     let transaction_template = AzeTransactionTemplate::PlayFold(playfold_txn_data);
-    let txn_request = client
-        .build_aze_play_fold_tx_request(transaction_template)
-        .unwrap();
+    let txn_request = client.build_aze_play_fold_tx_request(transaction_template).unwrap();
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
-    // note to be consumed by game account
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
         format!(
             "Player: {} plays fold",
             read_player_data().expect("Failed to read player data from Player.toml")
-        ),
-    )
-    .await;
+        )
+    ).await;
+
     Ok(GameActionResponse { is_taken: true })
 }
 
@@ -180,7 +177,7 @@ pub async fn bet(
     player_id: u64,
     game_id: u64,
     amount: u8,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     let mut client: AzeClient = create_aze_client();
     let player_account_id = AccountId::try_from(player_id).unwrap();
@@ -200,12 +197,9 @@ pub async fn bet(
     let playbet_txn_data = PlayBetTransactionData::new(player_account_id, game_account_id, amount);
 
     let transaction_template = AzeTransactionTemplate::PlayBet(playbet_txn_data);
-    let txn_request = client
-        .build_aze_play_bet_tx_request(transaction_template)
-        .unwrap();
+    let txn_request = client.build_aze_play_bet_tx_request(transaction_template).unwrap();
     execute_tx_and_sync(&mut client, txn_request.clone()).await;
 
-    // note to be consumed by game account
     let _ = broadcast_message(
         game_account_id.to_string(),
         ws_url.clone(),
@@ -213,16 +207,16 @@ pub async fn bet(
             "Player: {} bet amount: {}",
             read_player_data().expect("Failed to read player data from Player.toml"),
             amount
-        ),
-    )
-    .await;
+        )
+    ).await;
+
     Ok(GameActionResponse { is_taken: true })
 }
 
 pub async fn small_blind(
     player_id: u64,
     game_id: u64,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     // request small blind amount from game account
     let small_blind = 5; // for now
@@ -232,7 +226,7 @@ pub async fn small_blind(
 pub async fn big_blind(
     player_id: u64,
     game_id: u64,
-    ws_config_path: &std::path::PathBuf,
+    ws_config_path: &std::path::PathBuf
 ) -> Result<GameActionResponse, String> {
     // request big blind amount from game account
     let big_blind = 10; // for now

@@ -1,6 +1,6 @@
 use aze_lib::client::{ create_aze_client, AzeClient };
 use aze_lib::constants::{ PLAYER_CARD1_SLOT, PLAYER_CARD2_SLOT, PLAYER_FILE_PATH };
-use aze_lib::utils::{ card_from_number, Player };
+use aze_lib::utils::Player;
 use clap::Parser;
 use miden_objects::{ 
     accounts::AccountId,

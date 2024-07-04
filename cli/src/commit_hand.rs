@@ -45,7 +45,7 @@ impl CommitHandCmd {
 }
 
 fn get_ids(cmd: &CommitHandCmd) -> (AccountId, AccountId) {
-    if cmd.game_id == 0 && cmd.player_id == 0 {
+    if cmd.game_id ==0 && cmd.player_id == 0 {
         let path = Path::new(PLAYER_FILE_PATH);
         let player: Player = toml::from_str(&fs::read_to_string(path).expect("Failed to read Player.toml")).expect("Failed to deserialize player data");
         let sender_account_id = AccountId::try_from(player.player_id()).unwrap();

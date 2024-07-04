@@ -20,11 +20,8 @@ use crate::{
     client::{AzeAccountTemplate, AzeClient, AzeGameMethods},
     constants::{
         BUY_IN_AMOUNT, CURRENT_TURN_INDEX_SLOT, HIGHEST_BET, NO_OF_PLAYERS, PLAYER_FILE_PATH,
-        PLAYER_INITIAL_BALANCE, SMALL_BLIND_AMOUNT, SMALL_BUY_IN_AMOUNT,
-    },
-    gamestate::Check_Action,
-    notes::{consume_notes, mint_note},
-    storage::GameStorageSlotData,
+        PLAYER_INITIAL_BALANCE, SMALL_BLIND_AMOUNT, SMALL_BUY_IN_AMOUNT, PLAYER_FILE_PATH
+    }, gamestate::Check_Action, notes::{consume_notes, mint_note}, storage::GameStorageSlotData
 };
 use ::rand::Rng;
 use figment::{
@@ -297,6 +294,9 @@ impl Player {
     }
     pub fn game_id(&self) -> Option<u64> {
         self.game_id
+    }
+    pub fn set_game_id(&mut self, game_id: u64) {
+        self.game_id = Some(game_id);
     }
 }
 

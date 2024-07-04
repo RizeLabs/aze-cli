@@ -7,6 +7,13 @@ const.NO_OF_CARDS=3
 const.TEMP_CARD_SLOT=103
 const.PLAYER_DATA_SLOT=56
 
+proc.tx_state_change
+    push.254 exec.account::get_item
+    add.1
+    push.254 exec.account::set_item
+    dropw dropw
+end
+
 proc.receive_cards
     exec.account::set_item
     # => [R, V]
@@ -57,4 +64,6 @@ begin
     call.increment_action_type
 
     dropw dropw
+
+    call.tx_state_change dropw
 end

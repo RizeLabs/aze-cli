@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use ansi_term::Colour::{Blue, Green, Red, Yellow};
+use ansi_term::Colour::{ Blue, Green, Red, Yellow };
 use aze_lib::{
     client::{create_aze_client, AzeClient},
     constants::PLAYER_FILE_PATH,
@@ -17,17 +17,22 @@ pub struct StatsCmd;
 impl StatsCmd {
     pub async fn execute(&self, ws_config: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         let gameid: u64 = get_id();
+        let gameid: u64 = get_id();
         let mut client: AzeClient = create_aze_client();
         let game_account_id = AccountId::try_from(gameid).unwrap();
         // let game_account = client.get_account(game_account_id).unwrap().0; // giving error
         let ws_url = Ws_config::load(ws_config).url.unwrap();
-        let stat_data: aze_lib::utils::StatResponse =
-            get_stats(game_account_id.to_string(), ws_url).await?;
+        let stat_data: aze_lib::utils::StatResponse = get_stats(
+            game_account_id.to_string(),
+            ws_url
+        ).await?;
 
         let community_cards: Vec<String> =
             get_community_cards(stat_data.current_state, stat_data.community_cards);
         let poker_table = format!(
             "{}\n\
+             {}\n\
+             {}\n\
              {}\n\
              {}\n\
              {}\n\

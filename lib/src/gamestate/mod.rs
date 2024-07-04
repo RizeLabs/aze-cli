@@ -36,7 +36,7 @@ impl PokerGame {
         player_ids: Vec<u64>,
         initial_balances: Vec<u64>,
         small_blind: u64,
-        big_blind: u64,
+        big_blind: u64
     ) -> Self {
         let players = player_ids
             .into_iter()

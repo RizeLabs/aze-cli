@@ -4,7 +4,6 @@ use aze_lib::constants::PLAYER_FILE_PATH;
 use aze_types::accounts::AccountCreationError;
 use clap::Parser;
 use miden_objects::accounts::AccountId;
-use serde::Serialize;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;

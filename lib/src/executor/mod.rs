@@ -1,18 +1,18 @@
 use crate::client::AzeClient;
 use miden_client::{
-    client::transactions::{ TransactionResult, transaction_request::TransactionRequest },
+    client::transactions::transaction_request::TransactionRequest,
     store::TransactionFilter,
-    errors::ClientError
+    errors::ClientError,
 };
 use miden_objects::transaction::TransactionId;
 use miden_tx::{ TransactionExecutorError, TransactionCompilerError };
 use std::time::Duration;
 
 pub async fn execute_tx_and_sync(client: &mut AzeClient, tx_request: TransactionRequest) {
-    sync_state_with_retry(client).await;
-
-    let transaction_id = submit_transaction_with_retry(client, tx_request.clone()).await;
     
+    sync_state_with_retry(client).await;
+    let transaction_id = submit_transaction_with_retry(client, tx_request.clone()).await;
+
     // wait until tx is committed
     loop {
         sync_state_with_retry(client).await;

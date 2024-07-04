@@ -17,9 +17,12 @@ use warp::Filter;
 
 use crate::client::{create_aze_client, AzeClient};
 use crate::constants::{
-    COMMUNITY_CARDS, CURRENT_PHASE_SLOT, CURRENT_TURN_INDEX_SLOT, FIRST_PLAYER_INDEX,
-    HIGHEST_BET_SLOT, IS_FOLD_OFFSET, NO_OF_PLAYERS, PLAYER_BALANCE_SLOT, PLAYER_HANDS,
-    PLAYER_INITIAL_BALANCE, SMALL_BLIND_SLOT, PLAYER_BET_OFFSET
+    COMMUNITY_CARDS, COMMUNITY_CARDS, CURRENT_PHASE_SLOT, CURRENT_PHASE_SLOT,
+    CURRENT_TURN_INDEX_SLOT, CURRENT_TURN_INDEX_SLOT, FIRST_PLAYER_INDEX, FIRST_PLAYER_INDEX,
+    HIGHEST_BET_SLOT, HIGHEST_BET_SLOT, IS_FOLD_OFFSET, IS_FOLD_OFFSET, NO_OF_PLAYERS,
+    NO_OF_PLAYERS, PLAYER_BALANCE_SLOT, PLAYER_BALANCE_SLOT, PLAYER_BET_OFFSET, PLAYER_BET_OFFSET,
+    PLAYER_HANDS, PLAYER_HANDS, PLAYER_INITIAL_BALANCE, PLAYER_INITIAL_BALANCE, SMALL_BLIND_SLOT,
+    SMALL_BLIND_SLOT,
 };
 use crate::gamestate::{Check_Action, PokerGame};
 use crate::utils::Ws_config;
@@ -33,6 +36,7 @@ struct PublishRequest {
 
 #[derive(Deserialize)]
 struct StatRequest {
+    game_id: String,
     game_id: String,
 }
 
@@ -50,14 +54,14 @@ struct StatResponse {
     pub has_folded: Vec<u64>,
     pub highest_bet: u64,
     pub small_blind_amount: u64,
-    pub player_identifiers: HashMap<u64, String>
+    pub player_identifiers: HashMap<u64, String>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct CheckmoveRequest {
     pub player_id: u64,
     pub game_id: u64,
-    pub action: Check_Action
+    pub action: Check_Action,
 }
 #[derive(Deserialize, Serialize)]
 pub struct SubmitIdenRequest {
@@ -270,7 +274,10 @@ async fn publish_handler(
     Ok(warp::reply::with_status("Event published", StatusCode::OK))
 }
 
-async fn stat_handler(body: StatRequest, local_game: Arc<Mutex<PokerGame>>,) -> Result<impl warp::Reply, warp::Rejection> {
+async fn stat_handler(
+    body: StatRequest,
+    local_game: Arc<Mutex<PokerGame>>,
+) -> Result<impl warp::Reply, warp::Rejection> {
     let game_id = body.game_id;
     let mut client: AzeClient = create_aze_client();
     let game_account_id = AccountId::from_hex(&game_id).unwrap();
@@ -294,6 +301,12 @@ async fn stat_handler(body: StatRequest, local_game: Arc<Mutex<PokerGame>>,) -> 
 
     // Player hand cards
     let mut player_hand_cards: Vec<Vec<u64>> = Vec::new();
+
+    // has player folded
+    let mut has_folded: Vec<u64> = vec![];
+
+    let mut player_ids: Vec<u64> = vec![];
+    let mut player_bets: Vec<u64> = vec![];
 
     // has player folded
     let mut has_folded: Vec<u64> = vec![];
@@ -391,7 +404,7 @@ async fn stat_handler(body: StatRequest, local_game: Arc<Mutex<PokerGame>>,) -> 
         has_folded,
         highest_bet,
         small_blind_amount,
-        player_identifiers
+        player_identifiers,
     }))
 }
 
@@ -401,7 +414,17 @@ pub async fn checkmove_handler(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let mut game = local_game.lock().unwrap();
     let result = game.check_move(body.action, body.player_id, body.game_id);
+    let result = game.check_move(body.action, body.player_id, body.game_id);
     Ok(warp::reply::json(&[result]))
+}
+
+async fn submitiden_handler(
+    body: SubmitIdenRequest,
+    local_game: Arc<Mutex<PokerGame>>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    let mut game = local_game.lock().unwrap();
+    let _ = game.add_iden(body.player_id, body.identifier);
+    Ok(warp::reply::with_status("Iden Added", StatusCode::OK))
 }
 
 async fn submitiden_handler(
