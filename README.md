@@ -66,3 +66,5 @@
   **Example usage:**
   ```sh
   aze-cli commit-hand
+
+### For more detailed documentation refer this [docs](https://abhays-organization-1.gitbook.io/aze-docs)
