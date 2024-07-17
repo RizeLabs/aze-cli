@@ -1,12 +1,12 @@
+use ansi_term::Colour::{Blue, Green, Red, Yellow};
+use aze_lib::constants::PLAYER_FILE_PATH;
+use aze_lib::utils::{add_identifier, Player, Ws_config};
 use clap::Parser;
 use std::error::Error;
 use std::path::PathBuf;
 use futures_util::{StreamExt, SinkExt}; // Import the required traits
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::protocol::Message;
-use aze_lib::utils::{ Player, Ws_config };
-use aze_lib::constants::PLAYER_FILE_PATH;
-use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use miden_objects::accounts::{Account, AccountId};
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
@@ -37,9 +37,12 @@ impl ConnectCmd {
         let game_id: u64 = AccountId::from_hex(&game_id_hex).unwrap().into();
         let config_str = fs::read_to_string(PLAYER_FILE_PATH)?;
         let mut config: Player = toml::from_str(&config_str)?;
-        config.set_game_id(game_id);
+        let player_id = config.player_id.clone();
+        let identifier = config.identifier.clone();
+        config.game_id = Some(game_id);
         let updated_config_str = toml::to_string(&config)?;
         fs::write(PLAYER_FILE_PATH, updated_config_str)?;
+        let _ = add_identifier(player_id, identifier, &self.url).await;
 
         println!("Connected to the game server at {}", self.url);
 
