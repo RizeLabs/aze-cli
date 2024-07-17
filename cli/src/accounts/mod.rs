@@ -58,7 +58,7 @@ pub async fn create_aze_game_account(
         .new_game_account(
             AzeAccountTemplate::GameAccount {
                 mutable_code: false,
-                storage_mode: AccountStorageMode::Local,
+                storage_mode: AccountStorageMode::OnChain,
             },
             Some(slot_data),
         )
